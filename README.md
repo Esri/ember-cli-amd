@@ -1,7 +1,14 @@
 # Ember-cli-amd
 
 This addon will dynamically modify `loader.js` to allow it to work in parallel with a separate AMD loader.
-*Based on the work of [Jack Rowlingson](https://github.com/jrowlingson) to hack the parallel use of an AMD loader and ember-cli loader.*
+*Thanks to [Jack Rowlingson](https://github.com/jrowlingson) for figuring out how to use an AMD loader and ember-cli loader concurrently.*
+
+[View it live](http://arcgis.github.io/ember-cli-amd/) using the [ArcGIS API for JavaScript](https://developers.arcgis.com/javascript/).
+
+## Features
+* Load AMD modules in parallel with [ember-cli/loader.js](https://github.com/ember-cli/loader.js).
+* Works with AMD CDN libraries, such as [Dojo](https://dojotoolkit.org/download/) or the [ArcGIS API for JavaScript](https://developers.arcgis.com/javascript/).
+* Uses the [RequireJS Optimizer](http://requirejs.org/docs/optimization.html) for fast buids while coding.
 
 ## Installation
 
@@ -10,6 +17,11 @@ This addon will dynamically modify `loader.js` to allow it to work in parallel w
 * `bower install`
 
 ## Usage
+
+Install to your ember-cli application
+
+* `npm install --save ember-cli-amd`
+
 Provide a list of packages that will be loaded via an AMD loader such as RequireJS or Dojo. You can also provide the source for the loader.
 ```javascript
 // use this in Brocfile.js
@@ -92,7 +104,7 @@ var ENV = {
   }
 ```
 
-## Running
+# Running
 
 * `ember server`
 * Visit your app at http://localhost:4200.
@@ -106,4 +118,20 @@ var ENV = {
 
 * `ember build`
 
-For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).
+## Requirements
+* [ember-cli](http://www.ember-cli.com/) 0.2.3 or greater.
+
+## Resources
+* For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).
+* To learn more about the ArcGIS API for JavaScript, visit [the developers pages](https://developers.arcgis.com/javascript/).
+
+## Issues
+
+Find a bug or want to request a new feature?  Please let us know by submitting an issue.
+
+## Contributing
+
+Esri welcomes contributions from anyone and everyone. Please see our [guidelines for contributing](https://github.com/esri/contributing).
+
+[](Esri Tags: ember-cli-amd)
+[](Esri Language: JavaScript)​
