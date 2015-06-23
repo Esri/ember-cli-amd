@@ -1,3 +1,14 @@
+// Copyright 2015 Esri
+// Licensed under The MIT License(MIT);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//   http://opensource.org/licenses/MIT
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* jshint node: true */
 'use strict';
 
@@ -13,13 +24,13 @@ var merge = require('merge');
 /*
  * It is up the user to provide AMD package names
  * that will be loaded via an AMD loader:
-  var app = new EmberApp({
-    amdPackages: [
-      'esri','dojo','dojox','dijit',
-      'put-selector','xstyle','dbind','dgrid'
-    ]
-  });
- */
+ var app = new EmberApp({
+  amdPackages: [
+    'esri','dojo','dojox','dijit',
+    'put-selector','xstyle','dbind','dgrid'
+  ]
+ });
+*/
 
 // application name should be used for .js file
 var appName = '';
@@ -49,53 +60,53 @@ var useDojo = false;
 var requireConfig = {};
 
 var findAMD = function findAMD() {
-    var files = walk(root + '/app').filter(function(x) {
-      return x.indexOf('.js') > -1;
+  var files = walk(root + '/app').filter(function(x) {
+    return x.indexOf('.js') > -1;
+  });
+  var results = [];
+  files.map(function(x) {
+    var f = fs.readFileSync(x, 'utf8');
+    var ast = esprima.parse(f);
+    eswalk(ast, function(node) {
+      var valid = isValid(node, amdPackages);
+      if (valid) {
+        results = results.concat(valid);
+      }
     });
-    var results = [];
-    files.map(function(x) {
-      var f = fs.readFileSync(x, 'utf8');
-      var ast = esprima.parse(f);
-      eswalk(ast, function(node) {
-        var valid = isValid(node, amdPackages);
-        if (valid) {
-          results = results.concat(valid);
-        }
-      });
-    });
-    var unique = results.filter(function(elem, pos) {
-      return results.indexOf(elem) == pos;
-    }).sort();
-    var tmp = unique.join("','");
-    var _names_ = replaceall('"', "'",  JSON.stringify(tmp));
-    return { names: _names_, modules: unique };
+  });
+  var unique = results.filter(function(elem, pos) {
+    return results.indexOf(elem) == pos;
+  }).sort();
+  var tmp = unique.join("','");
+  var _names_ = replaceall('"', "'",  JSON.stringify(tmp));
+  return { names: _names_, modules: unique };
 }
 
 var amdBuilder = function amdBuilder(packageNames) {
-    var boot = 'define([' + packageNames + '], function(){})';
-    fs.writeFileSync(amdBase + '/main.js', boot);
-    var cfg = {
-      baseUrl: amdBase,
-      name: 'main',
-      out: amdBase + '/built.js',
-      locale: locale,
-      optimize: 'none',
-      inlineText: false
-    };
+  var boot = 'define([' + packageNames + '], function(){})';
+  fs.writeFileSync(amdBase + '/main.js', boot);
+  var cfg = {
+    baseUrl: amdBase,
+    name: 'main',
+    out: amdBase + '/built.js',
+    locale: locale,
+    optimize: 'none',
+    inlineText: false
+  };
 
-    if (!useDojo) {
-      cfg.include = ['../requirejs/require'].concat(cfg.include);
-    }
+  if (!useDojo) {
+    cfg.include = ['../requirejs/require'].concat(cfg.include);
+  }
 
-    if (requireConfig.include && requireConfig.include.length){
-      cfg.include = cfg.include.concat(requireConfig.include);
-    }
+  if (requireConfig.include && requireConfig.include.length){
+    cfg.include = cfg.include.concat(requireConfig.include);
+  }
 
-    // do not let user configs override these defaults
-    delete requireConfig['baseUrl'];
-    delete requireConfig['name'];
-    delete requireConfig['out'];
-    requirejs.optimize(merge(cfg, requireConfig), function(res) {});
+  // do not let user configs override these defaults
+  delete requireConfig['baseUrl'];
+  delete requireConfig['name'];
+  delete requireConfig['out'];
+  requirejs.optimize(merge(cfg, requireConfig), function(res) {});
 };
 
 var walk = function walk(dir) {
@@ -105,7 +116,7 @@ var walk = function walk(dir) {
     file = dir + '/' + file;
     var stat = fs.statSync(file);
     if (stat && stat.isDirectory()) results = results.concat(walk(file));
-      else results.push(file);
+    else results.push(file);
   });
   return results;
 }
@@ -136,19 +147,19 @@ var isValid = function isValid(node, packages) {
 };
 
 var adoptFunction = "function adopt() {\n" +
-    "      if (typeof adoptable !== 'undefined') {\n" +
-    "        adopt = Function('');\n" +
-    "        var len = adoptable.length;\n" +
-    "        var i = 0;\n" +
-    "        while (i < len--) {\n" +
-    "          var adoptee = adoptable[len];\n" +
-    "          if (adoptee !== undefined) {\n" +
-    "            registry[adoptee.name] = new Module(adoptee.name, [], []);\n" +
-    "            seen[adoptee.name] = adoptee.obj['default'] = adoptee.obj;\n" +
-    "          }\n" +
-    "        }\n" +
-    "      }\n" +
-    "    }\n";
+  "      if (typeof adoptable !== 'undefined') {\n" +
+  "        adopt = Function('');\n" +
+  "        var len = adoptable.length;\n" +
+  "        var i = 0;\n" +
+  "        while (i < len--) {\n" +
+  "          var adoptee = adoptable[len];\n" +
+  "          if (adoptee !== undefined) {\n" +
+  "            registry[adoptee.name] = new Module(adoptee.name, [], []);\n" +
+  "            seen[adoptee.name] = adoptee.obj['default'] = adoptee.obj;\n" +
+  "          }\n" +
+  "        }\n" +
+  "      }\n" +
+  "    }\n";
 
 var addAdopts = function addAdopts(f) {
   if (f.indexOf('adopt()') > 0) {
@@ -173,66 +184,66 @@ var addAdopts = function addAdopts(f) {
 };
 
 var createContents = function createContents(names, objs, adoptables) {
-    var contents = [
-      '<script src="' + src + '"></script>\n',
-      '<script>\n',
-      (useRequire || useDojo ? 'require.config ? require.config(reqConfig) : require(reqConfig);\n' : ''),
-      (names.length > 2 ? 'require([\n' + names : 'require([\n'),
-      '], function(\n',
-      objs.join(','),
-      ') {\n',
-      'adoptable = [',
-      adoptables.join(''),
-      '];\n',
-      'var vendor=document.createElement("script");\n',
-      'vendor.setAttribute("src", "assets/vendor.js");\n',
-      'vendor.onload=function(){\n',
-      'var app=document.createElement("script");\n',
-      'app.setAttribute("src", "assets/', appName, '.js");\n',
-      'document.body.appendChild(app);\n',
-      '}\n',
-      'document.body.appendChild(vendor);\n',
-      '});\n',
-      '</script>'
-    ];
-    return contents.join('');
+  var contents = [
+    '<script src="' + src + '"></script>\n',
+    '<script>\n',
+    (useRequire || useDojo ? 'require.config ? require.config(reqConfig) : require(reqConfig);\n' : ''),
+    (names.length > 2 ? 'require([\n' + names : 'require([\n'),
+    '], function(\n',
+    objs.join(','),
+    ') {\n',
+    'adoptable = [',
+    adoptables.join(''),
+    '];\n',
+    'var vendor=document.createElement("script");\n',
+    'vendor.setAttribute("src", "assets/vendor.js");\n',
+    'vendor.onload=function(){\n',
+    'var app=document.createElement("script");\n',
+    'app.setAttribute("src", "assets/', appName, '.js");\n',
+    'document.body.appendChild(app);\n',
+    '}\n',
+    'document.body.appendChild(vendor);\n',
+    '});\n',
+    '</script>'
+  ];
+  return contents.join('');
 };
 
 var createContentsForTests = function createContentsForTests(names, objs, adoptables) {
-    var contents = [
-      '<script src="' + src + '"></script>\n',
-      '<script>\n',
-      (useRequire || useDojo ? 'require.config ? require.config(reqConfig) : require(reqConfig);\n' : ''),
-      (names.length > 2 ? 'require([\n' + names : 'require([\n'),
-      '], function(\n',
-      objs.join(','),
-      ') {\n',
-      'adoptable = [',
-      adoptables.join(''),
-      '];\n',
-      'var vendor=document.createElement("script");\n',
-      'vendor.setAttribute("src", "assets/vendor.js");\n',
-      'vendor.onload=function(){\n',
-      'var testSupport=document.createElement("script");\n',
-      'testSupport.setAttribute("src", "assets/test-support.js");\n',
-      'testSupport.onload=function(){\n',
-      'var app=document.createElement("script");\n',
-      'app.setAttribute("src", "assets/', appName, '.js");\n',
-      'document.body.appendChild(app);\n',
-      'var testem=document.createElement("script");\n',
-      'testem.setAttribute("src", "testem.js");\n',
-      'document.body.appendChild(testem);\n',
-      'var testLoader=document.createElement("script");\n',
-      'testLoader.setAttribute("src", "assets/test-loader.js");\n',
-      'document.body.appendChild(testLoader);\n',
-      '}\n',
-      'document.body.appendChild(testSupport);\n',
-      '}\n',
-      'document.body.appendChild(vendor);\n',
-      '});\n',
-      '</script>'
-    ];
-    return contents.join('');
+  var contents = [
+    '<script src="' + src + '"></script>\n',
+    '<script>\n',
+    (useRequire || useDojo ? 'require.config ? require.config(reqConfig) : require(reqConfig);\n' : ''),
+    (names.length > 2 ? 'require([\n' + names : 'require([\n'),
+    '], function(\n',
+    objs.join(','),
+    ') {\n',
+    'adoptable = [',
+    adoptables.join(''),
+    '];\n',
+    'var vendor=document.createElement("script");\n',
+    'vendor.setAttribute("src", "assets/vendor.js");\n',
+    'vendor.onload=function(){\n',
+    'var testSupport=document.createElement("script");\n',
+    'testSupport.setAttribute("src", "assets/test-support.js");\n',
+    'testSupport.onload=function(){\n',
+    'var app=document.createElement("script");\n',
+    'app.setAttribute("src", "assets/', appName, '.js");\n',
+    'document.body.appendChild(app);\n',
+    'var testem=document.createElement("script");\n',
+    'testem.setAttribute("src", "testem.js");\n',
+    'document.body.appendChild(testem);\n',
+    'var testLoader=document.createElement("script");\n',
+    'testLoader.setAttribute("src", "assets/test-loader.js");\n',
+    'document.body.appendChild(testLoader);\n',
+    '}\n',
+    'document.body.appendChild(testSupport);\n',
+    '}\n',
+    'document.body.appendChild(vendor);\n',
+    '});\n',
+    '</script>'
+  ];
+  return contents.join('');
 };
 
 module.exports = {
