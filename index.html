@@ -35,10 +35,10 @@ require([
 mod0,mod1,mod2,mod3,mod4) {
 adoptable = [{name:"esri/arcgis/utils",obj:mod0},{name:"esri/dijit/Legend",obj:mod1},{name:"esri/dijit/Search",obj:mod2},{name:"esri/layers/FeatureLayer",obj:mod3},{name:"esri/tasks/query",obj:mod4},];
 var vendor=document.createElement("script");
-vendor.setAttribute("src", "assets/vendor.js");
+vendor.setAttribute("src", "ember-cli-amd/assets/vendor.js");
 vendor.onload=function(){
 var app=document.createElement("script");
-app.setAttribute("src", "assets/ember-esri.js");
+app.setAttribute("src", "ember-cli-amd/assets/ember-esri.js");
 document.body.appendChild(app);
 }
 document.body.appendChild(vendor);
