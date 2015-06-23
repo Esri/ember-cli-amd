@@ -1,4 +1,4 @@
-# Ember-cli-esrijs
+# Ember-cli-amd
 
 This addon will dynamically modify `loader.js` to allow it to work in parallel with a separate AMD loader.
 *Based on the work of [Jack Rowlingson](https://github.com/jrowlingson) to hack the parallel use of an AMD loader and ember-cli loader.*
