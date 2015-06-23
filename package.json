@@ -1,7 +1,7 @@
 {
   "name": "ember-cli-amd",
-  "version": "0.0.0",
-  "description": "The default blueprint for ember-cli addons.",
+  "version": "0.1.0",
+  "description": "Ember CLI Addon that can load AMD modules.",
   "directories": {
     "doc": "doc",
     "test": "tests"
@@ -11,7 +11,7 @@
     "build": "ember build",
     "test": "ember try:testall"
   },
-  "repository": "",
+  "repository": "https://github.com/ArcGIS/ember-cli-amd",
   "engines": {
     "node": ">= 0.10.0"
   },
@@ -38,7 +38,14 @@
     "ember-addon"
   ],
   "dependencies": {
-    "ember-cli-babel": "^5.0.0"
+    "ember-cli-babel": "^5.0.0",
+    "broccoli-string-replace": "0.0.2",
+    "esprima-harmony": "^7001.1.0-dev-harmony-fb",
+    "esprima-walk": "^0.1.0",
+    "merge": "^1.2.0",
+    "replaceall": "^0.1.6",
+    "requirejs": "^2.1.18",
+    "strip-comments": "^0.3.2"
   },
   "ember-addon": {
     "configPath": "tests/dummy/config"
