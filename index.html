@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>EsrijsApp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <base href="/" />
+<meta name="ember-esri/config/environment" content="%7B%22modulePrefix%22%3A%22ember-esri%22%2C%22environment%22%3A%22development%22%2C%22baseURL%22%3A%22/%22%2C%22locationType%22%3A%22auto%22%2C%22EmberENV%22%3A%7B%22FEATURES%22%3A%7B%7D%7D%2C%22APP%22%3A%7B%22name%22%3A%22ember-esri%22%2C%22version%22%3A%220.0.0.5a9a1ab2%22%7D%2C%22contentSecurityPolicy%22%3A%7B%22default-src%22%3A%22%27none%27%22%2C%22script-src%22%3A%22%27self%27%20%27unsafe-eval%27%20%27unsafe-inline%27%20http%3A//js.arcgis.com/%20https%3A//js.arcgis.com/%20https%3A//jsdev.arcgis.com/%20http%3A//jsdev.arcgis.com/%22%2C%22font-src%22%3A%22%27self%27%20https%3A//jsdev.arcgis.com/%22%2C%22connect-src%22%3A%22%27self%27%20http%3A//services.arcgis.com/%20http%3A//services.arcgisonline.com/%20http%3A//elevation3d.arcgis.com%20http%3A//static.arcgis.com%22%2C%22img-src%22%3A%22%27self%27%20http%3A//js.arcgis.com/%20https%3A//jsdev.arcgis.com/%20http%3A//jsdev.arcgis.com%22%2C%22style-src%22%3A%22%27self%27%20%27unsafe-inline%27%20https%3A//jsdev.arcgis.com/%20http%3A//jsdev.arcgis.com/%22%2C%22media-src%22%3A%22%27self%27%22%7D%2C%22contentSecurityPolicyHeader%22%3A%22Content-Security-Policy-Report-Only%22%2C%22exportApplicationGlobal%22%3Atrue%7D" />
+    <link rel="stylesheet" href="http://js.arcgis.com/3.13/esri/css/esri.css">
+    <link rel="stylesheet" href="assets/ember-esri.css">
+    <link rel="stylesheet" href="assets/vendor.css">
+
+    
+  </head>
+  <body>
+    <!-- This script tag is only needed if useRequire = true in Brocfile.js -->
+    <!-- If using a CDN w/Dojo, you can replace this scriptTage with a dojoConfig -->
+    <!-- This script tag must come before the content-for "esri" block -->
+    <script>
+      var reqConfig = {
+        locale: 'en-us',
+        isDebug: true
+      };
+      var dojoConfig = reqConfig;
+      dojoConfig.async = true;
+
+    </script>
+
+    <script src="https://js.arcgis.com/3.13/"></script>
+<script>
+require([
+'esri/arcgis/utils','esri/dijit/Legend','esri/dijit/Search','esri/layers/FeatureLayer','esri/tasks/query'], function(
+mod0,mod1,mod2,mod3,mod4) {
+adoptable = [{name:"esri/arcgis/utils",obj:mod0},{name:"esri/dijit/Legend",obj:mod1},{name:"esri/dijit/Search",obj:mod2},{name:"esri/layers/FeatureLayer",obj:mod3},{name:"esri/tasks/query",obj:mod4},];
+var vendor=document.createElement("script");
+vendor.setAttribute("src", "assets/vendor.js");
+vendor.onload=function(){
+var app=document.createElement("script");
+app.setAttribute("src", "assets/ember-esri.js");
+document.body.appendChild(app);
+}
+document.body.appendChild(vendor);
+});
+</script>
+
+    
+
+    
+  </body>
+</html>

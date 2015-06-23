@@ -1,0 +1,36 @@
+html, body, .viewDiv {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+}
+
+.legendDiv {
+  width: 25%;
+  height: 600px;
+  padding: 1em;
+  float: left;
+}
+
+.viewDiv {
+  width: 75%;
+  height: 600px;
+  float: right;
+  box-shadow: 2px 2px 2px 1px rgba(255, 255, 255, 0.4);
+  margin-bottom: 1em;
+}
+
+.app-container {
+  padding: 1em;
+}
+
+.arcgisSearch {
+  position: fixed;
+  z-index: 999;
+  right: 2em;
+  top: 2em;
+}
+
+.btn:hover {
+  transform: scale(1.1);
+  box-shadow: 2px 2px 2px 1px rgba(255, 255, 255, 0.2);
+}
