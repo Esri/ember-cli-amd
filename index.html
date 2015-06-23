@@ -6,11 +6,11 @@
     <title>EsrijsApp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <base href="/" />
-<meta name="ember-esri/config/environment" content="%7B%22modulePrefix%22%3A%22ember-esri%22%2C%22environment%22%3A%22development%22%2C%22baseURL%22%3A%22/%22%2C%22locationType%22%3A%22auto%22%2C%22EmberENV%22%3A%7B%22FEATURES%22%3A%7B%7D%7D%2C%22APP%22%3A%7B%22name%22%3A%22ember-esri%22%2C%22version%22%3A%220.0.0.5a9a1ab2%22%7D%2C%22contentSecurityPolicy%22%3A%7B%22default-src%22%3A%22%27none%27%22%2C%22script-src%22%3A%22%27self%27%20%27unsafe-eval%27%20%27unsafe-inline%27%20http%3A//js.arcgis.com/%20https%3A//js.arcgis.com/%20https%3A//jsdev.arcgis.com/%20http%3A//jsdev.arcgis.com/%22%2C%22font-src%22%3A%22%27self%27%20https%3A//jsdev.arcgis.com/%22%2C%22connect-src%22%3A%22%27self%27%20http%3A//services.arcgis.com/%20http%3A//services.arcgisonline.com/%20http%3A//elevation3d.arcgis.com%20http%3A//static.arcgis.com%22%2C%22img-src%22%3A%22%27self%27%20http%3A//js.arcgis.com/%20https%3A//jsdev.arcgis.com/%20http%3A//jsdev.arcgis.com%22%2C%22style-src%22%3A%22%27self%27%20%27unsafe-inline%27%20https%3A//jsdev.arcgis.com/%20http%3A//jsdev.arcgis.com/%22%2C%22media-src%22%3A%22%27self%27%22%7D%2C%22contentSecurityPolicyHeader%22%3A%22Content-Security-Policy-Report-Only%22%2C%22exportApplicationGlobal%22%3Atrue%7D" />
+    <base href="/ember-cli-amd/" />
+<meta name="ember-esri/config/environment" content="%7B%22modulePrefix%22%3A%22ember-esri%22%2C%22environment%22%3A%22production%22%2C%22baseURL%22%3A%22/ember-cli-amd%22%2C%22locationType%22%3A%22auto%22%2C%22EmberENV%22%3A%7B%22FEATURES%22%3A%7B%7D%7D%2C%22APP%22%3A%7B%22name%22%3A%22ember-esri%22%2C%22version%22%3A%220.0.0.5a9a1ab2%22%7D%2C%22contentSecurityPolicy%22%3A%7B%22default-src%22%3A%22%27none%27%22%2C%22script-src%22%3A%22%27self%27%20%27unsafe-eval%27%20%27unsafe-inline%27%20http%3A//js.arcgis.com/%20https%3A//js.arcgis.com/%20https%3A//jsdev.arcgis.com/%20http%3A//jsdev.arcgis.com/%22%2C%22font-src%22%3A%22%27self%27%20https%3A//jsdev.arcgis.com/%22%2C%22connect-src%22%3A%22%27self%27%20http%3A//services.arcgis.com/%20http%3A//services.arcgisonline.com/%20http%3A//elevation3d.arcgis.com%20http%3A//static.arcgis.com%22%2C%22img-src%22%3A%22%27self%27%20http%3A//js.arcgis.com/%20https%3A//jsdev.arcgis.com/%20http%3A//jsdev.arcgis.com%22%2C%22style-src%22%3A%22%27self%27%20%27unsafe-inline%27%20https%3A//jsdev.arcgis.com/%20http%3A//jsdev.arcgis.com/%22%2C%22media-src%22%3A%22%27self%27%22%7D%2C%22contentSecurityPolicyHeader%22%3A%22Content-Security-Policy-Report-Only%22%2C%22exportApplicationGlobal%22%3Afalse%7D" />
     <link rel="stylesheet" href="http://js.arcgis.com/3.13/esri/css/esri.css">
-    <link rel="stylesheet" href="assets/ember-esri.css">
-    <link rel="stylesheet" href="assets/vendor.css">
+    <link rel="stylesheet" href="assets/ember-esri-48ef29a1fe95c026bfaba3e89dacfb92.css">
+    <link rel="stylesheet" href="assets/vendor-59bfa171b305a089d60fcf8b46ee9dba.css">
 
     
   </head>
@@ -35,10 +35,10 @@ require([
 mod0,mod1,mod2,mod3,mod4) {
 adoptable = [{name:"esri/arcgis/utils",obj:mod0},{name:"esri/dijit/Legend",obj:mod1},{name:"esri/dijit/Search",obj:mod2},{name:"esri/layers/FeatureLayer",obj:mod3},{name:"esri/tasks/query",obj:mod4},];
 var vendor=document.createElement("script");
-vendor.setAttribute("src", "ember-cli-amd/assets/vendor.js");
+vendor.setAttribute("src", "assets/vendor-330a86165eb973e1e256aa7d3fabb962.js");
 vendor.onload=function(){
 var app=document.createElement("script");
-app.setAttribute("src", "ember-cli-amd/assets/ember-esri.js");
+app.setAttribute("src", "assets/ember-esri-3303120eb8628ba0a56bda86253d424a.js");
 document.body.appendChild(app);
 }
 document.body.appendChild(vendor);
