@@ -1,16 +1,13 @@
 # Ember-cli-esrijs
 
 This addon will dynamically modify `loader.js` to allow it to work in parallel with a separate AMD loader.
-*Based on the work of Jack Rowlingson to hack the parallel use of Dojo loader and ember-cli loader.*
+*Based on the work of [Jack Rowlingson](https://github.com/jrowlingson) to hack the parallel use of an AMD loader and ember-cli loader.*
 
 ## Installation
 
 * `git clone` this repository
 * `npm install`
 * `bower install`
-
-## Warning
-This addon will cause the ember debug tools in Chrome to error on first load. A refresh of the page should allow them to load. Unfortunately those debug tools use the ember `define` and `require`, but the addon needs to override them to enable AMD support.
 
 ## Usage
 Provide a list of packages that will be loaded via an AMD loader such as RequireJS or Dojo. You can also provide the source for the loader.
