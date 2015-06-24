@@ -8,7 +8,7 @@ This addon will dynamically modify `loader.js` to allow it to work in parallel w
 ## Features
 * Load AMD modules in parallel with [ember-cli/loader.js](https://github.com/ember-cli/loader.js).
 * Works with AMD CDN libraries, such as [Dojo](https://dojotoolkit.org/download/) or the [ArcGIS API for JavaScript](https://developers.arcgis.com/javascript/).
-* Uses the [RequireJS Optimizer](http://requirejs.org/docs/optimization.html) for fast buids while coding.
+* Uses the [RequireJS Optimizer](http://requirejs.org/docs/optimization.html) for fast builds while coding.
 
 ## Installation
 
