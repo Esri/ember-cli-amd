@@ -3,7 +3,7 @@
 This addon will dynamically modify `loader.js` to allow it to work in parallel with a separate AMD loader.
 *Thanks to [Jack Rowlingson](https://github.com/jrowlingson) for figuring out how to use an AMD loader and ember-cli loader concurrently.*
 
-[View it live](http://arcgis.github.io/ember-cli-amd/) using the [ArcGIS API for JavaScript](https://developers.arcgis.com/javascript/).
+[View it live](http://esri.github.io/ember-cli-amd/) using the [ArcGIS API for JavaScript](https://developers.arcgis.com/javascript/).
 
 ## Features
 * Load AMD modules in parallel with [ember-cli/loader.js](https://github.com/ember-cli/loader.js).
