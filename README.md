@@ -29,7 +29,7 @@ Provide a list of packages that will be loaded via an AMD loader such as Require
 var app = new EmberApp({
   srcTag: 'https://js.arcgis.com/3.13/', // only needed for CDN, will default to 'built.js' if useRequire = true
   useRequire: false, // if this is true, srcTag via options is ignored
-  useDojo: false // if this is true, will inject the Dojo loader instead of RequireJS
+  useDojo: false, // if this is true, will inject the Dojo loader instead of RequireJS
   locale: 'en-us', // will use RequireJS i18n to set the localization
   amdPackages: [ // user defined AMD packages to search for in application
     'esri','dojo','dojox','dijit',
@@ -60,7 +60,7 @@ Update the `index.html` file to allow this addon to add script files as needed.
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>EsrijsApp</title>
+    <title>AMDApp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {{content-for 'head'}}
@@ -85,6 +85,38 @@ Update the `index.html` file to allow this addon to add script files as needed.
     {{content-for 'body'}}
 
     {{content-for 'body-footer'}}
+  </body>
+</html>
+```
+
+Update the `test/index.html` file to allow this addon to add script files as needed.
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>AMDApp Tests</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {{content-for 'head'}}
+    {{content-for 'test-head'}}
+
+    <link rel="stylesheet" href="assets/vendor.css">
+    <link rel="stylesheet" href="assets/ember-esri.css">
+    <link rel="stylesheet" href="assets/test-support.css">
+
+    {{content-for 'head-footer'}}
+    {{content-for 'test-head-footer'}}
+  </head>
+  <body>
+
+    {{content-for 'body'}}
+    {{content-for 'test-body'}}
+    {{content-for 'amd-test'}}
+    {{content-for 'body-footer'}}
+    {{content-for 'test-body-footer'}}
   </body>
 </html>
 ```
