@@ -15,7 +15,7 @@
   "engines": {
     "node": ">= 0.10.0"
   },
-  "author": "",
+  "author": "Rene Rubalcava and Jack Rowlingson",
   "license": "MIT",
   "devDependencies": {
     "broccoli-asset-rev": "^2.0.2",
@@ -35,7 +35,8 @@
     "ember-try": "0.0.6"
   },
   "keywords": [
-    "ember-addon"
+    "ember-addon",
+    "amd"
   ],
   "dependencies": {
     "ember-cli-babel": "^5.0.0",
@@ -48,6 +49,7 @@
     "strip-comments": "^0.3.2"
   },
   "ember-addon": {
-    "configPath": "tests/dummy/config"
+    "configPath": "tests/dummy/config",
+    "demoURL": "http://esri.github.io/ember-cli-amd/"
   }
 }
