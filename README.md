@@ -150,6 +150,17 @@ var ENV = {
 
 * `ember build`
 
+*Note - there is a [pending PR](https://github.com/rwjblue/broccoli-string-replace/pull/2) to fix an issue with fingerprinting during the build pocess*
+*A temporary workaround, should it be an issue for you is to disable fingerprinting in your application*
+```javascript
+var app = new EmberApp({
+  fingerprint: {
+    enabled: false
+  }
+});
+```
+
+
 ## Requirements
 * [ember-cli](http://www.ember-cli.com/) 0.2.3 or greater.
 
