@@ -289,8 +289,8 @@ module.exports = {
   postprocessTree: function(type, tree) {
     var data = {
       files: [
-        'assets/' + appName + '.js', // todo - jrowlingson - wildcard
-        'assets/vendor.js',
+        new RegExp(appName + '(.*js)'),
+        new RegExp('vendor(.*js)'),
         'assets/test-support.js'
       ],
       patterns: [
