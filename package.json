@@ -1,6 +1,6 @@
 {
   "name": "ember-cli-amd",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ember CLI Addon that can load AMD modules.",
   "directories": {
     "doc": "doc",
@@ -40,7 +40,7 @@
   ],
   "dependencies": {
     "ember-cli-babel": "^5.0.0",
-    "broccoli-string-replace": "0.0.2",
+    "broccoli-string-replace": "0.1.0",
     "esprima-harmony": "^7001.1.0-dev-harmony-fb",
     "esprima-walk": "^0.1.0",
     "merge": "^1.2.0",
