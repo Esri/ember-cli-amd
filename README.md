@@ -20,7 +20,7 @@ This addon will dynamically modify `loader.js` to allow it to work in parallel w
 
 Install to your ember-cli application
 
-* `npm install --save ember-cli-amd`
+* `npm install --save-dev ember-cli-amd`
 
 Provide a list of packages that will be loaded via an AMD loader such as RequireJS or Dojo. You can also provide the source for the loader.
 ```javascript
@@ -150,19 +150,8 @@ var ENV = {
 
 * `ember build`
 
-*Note - there is a pending PR for a dependency to fix an issue with fingerprinting during the build pocess*
-*A temporary workaround, should it be an issue for you is to disable fingerprinting in your application*
-```javascript
-var app = new EmberApp({
-  fingerprint: {
-    enabled: false
-  }
-});
-```
-
-
 ## Requirements
-* [ember-cli](http://www.ember-cli.com/) 0.2.3 or greater.
+* [ember-cli](http://www.ember-cli.com/) 1.13.0 or greater.
 
 ## Resources
 * For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).
@@ -193,5 +182,3 @@ limitations under the License.
 
 A copy of the license is available in the repository's [LICENSE.md](LICENSE.md) file.
 
-[](Esri Tags: ember-cli-amd)
-[](Esri Language: JavaScript)​
