@@ -24,10 +24,10 @@ Install to your ember-cli application
 
 Provide a list of packages that will be loaded via an AMD loader such as RequireJS or Dojo. You can also provide the source for the loader.
 ```javascript
-// use this in Brocfile.js
+// use this in ember-cli-build.js
 // Sample if using the ArcGIS API for JavaScript
 var app = new EmberApp({
-  srcTag: 'https://js.arcgis.com/3.13/', // only needed for CDN, will default to 'built.js' if useRequire = true
+  srcTag: 'https://js.arcgis.com/3.14/', // only needed for CDN, will default to 'built.js' if useRequire = true
   useRequire: false, // if this is true, srcTag via options is ignored
   useDojo: false, // if this is true, will inject the Dojo loader instead of RequireJS
   locale: 'en-us', // will use RequireJS i18n to set the localization
@@ -85,6 +85,8 @@ Update the `index.html` file to allow this addon to add script files as needed.
     {{content-for 'body'}}
 
     {{content-for 'body-footer'}}
+    
+    <!-- We removed the app and vendor js files as they will be inserted by the addon -->
   </body>
 </html>
 ```
@@ -134,6 +136,60 @@ var ENV = {
     'style-src': "'self' 'unsafe-inline'",
     'media-src': "'self'"
   }
+```
+
+## Example using the CDN resources
+
+```javascript
+// ember-cli-build.js
+module.exports = function(defaults) {
+  var app = new EmberApp(defaults, {
+    srcTag: 'https://js.arcgis.com/3.14/',
+    amdPackages: [
+      'esri','dojo','dojox','dijit',
+      'put-selector','xstyle','dbind','dgrid'
+    ]
+  });
+  
+  return app.toTree();
+};
+```
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ArcGIS App</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {{content-for 'head'}}
+
+    <link rel="stylesheet" href="http://js.arcgis.com/3.14/esri/css/esri.css">
+    <link rel="stylesheet" href="assets/vendor.css">
+    <link rel="stylesheet" href="assets/arcgis-app.css">
+
+    {{content-for 'head-footer'}}
+  </head>
+  <body>
+    <script>
+      var reqConfig = {
+        locale: 'en-us',
+        isDebug: true
+      };
+      var dojoConfig = reqConfig;
+      dojoConfig.async = true;
+    </script>
+
+    {{content-for 'amd'}}
+
+    {{content-for 'body'}}
+
+    {{content-for 'body-footer'}}
+  </body>
+</html>
 ```
 
 # Running
