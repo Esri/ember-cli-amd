@@ -15,7 +15,6 @@
 var fs = require('fs');
 var replace = require('broccoli-string-replace');
 var esprima = require('esprima');
-// var esprima = require('esprima-harmony');
 var eswalk = require('esprima-walk');
 var replaceall = require('replaceall');
 var strip = require('strip-comments');
@@ -59,6 +58,8 @@ var useRequire = false;
 var useDojo = false;
 // RequireJS Configuration
 var requireConfig = {};
+// Should addon output a dependency list
+var outputDependencyList = false;
 
 var findAMD = function findAMD() {
   var files = walk(root + '/app').filter(function(x) {
@@ -256,6 +257,7 @@ module.exports = {
     useRequire = !!app.options.useRequire;
     useDojo = !!app.options.useDojo;
     requireConfig = app.options.requireConfig || {};
+    outputDependencyList = app.options.outputDependencyList || false;
 
     if (useRequire || useDojo) {
       src = 'assets/built.js';
@@ -349,6 +351,10 @@ module.exports = {
       for (idx; idx < len; idx++) {
         var o = '{name:'+JSON.stringify(modules[idx])+',obj:'+objs[idx]+'},';
         adoptables.push(o);
+      }
+
+      if (outputDependencyList) {
+        fs.writeFileSync(root + '/dependencies.txt', names);
       }
 
       return (type === 'amd-test') ? createContentsForTests(names, objs, adoptables) : createContents(names, objs, adoptables);

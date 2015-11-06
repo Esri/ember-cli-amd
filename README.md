@@ -35,6 +35,9 @@ var app = new EmberApp({
     'esri','dojo','dojox','dijit',
     'put-selector','xstyle','dgrid'
   ],
+  // will create a dependencies.txt that will list all the
+  // AMD dependencies in the application
+  outputDependencyList: true,
   amdBase: 'bower_components/amdlibrary', // optional - base folder of AMD library
   // RequireJS configuration options
   // Please refere to RequireJS docs for more information
@@ -85,7 +88,7 @@ Update the `index.html` file to allow this addon to add script files as needed.
     {{content-for 'body'}}
 
     {{content-for 'body-footer'}}
-    
+
     <!-- We removed the app and vendor js files as they will be inserted by the addon -->
   </body>
 </html>
@@ -150,7 +153,6 @@ module.exports = function(defaults) {
       'put-selector','xstyle','dbind','dgrid'
     ]
   });
-  
   return app.toTree();
 };
 ```
