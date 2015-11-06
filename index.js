@@ -14,7 +14,8 @@
 
 var fs = require('fs');
 var replace = require('broccoli-string-replace');
-var esprima = require('esprima-harmony');
+var esprima = require('esprima');
+// var esprima = require('esprima-harmony');
 var eswalk = require('esprima-walk');
 var replaceall = require('replaceall');
 var strip = require('strip-comments');
@@ -66,7 +67,7 @@ var findAMD = function findAMD() {
   var results = [];
   files.map(function(x) {
     var f = fs.readFileSync(x, 'utf8');
-    var ast = esprima.parse(f);
+    var ast = esprima.parse(f, { sourceType: 'module' });
     eswalk(ast, function(node) {
       var valid = isValid(node, amdPackages);
       if (valid) {

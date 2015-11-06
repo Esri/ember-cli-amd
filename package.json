@@ -31,10 +31,11 @@
     "ember-cli-release": "0.2.3",
     "ember-cli-uglify": "^1.0.1",
     "ember-data": "1.13.5",
+    "ember-disable-prototype-extensions": "^1.0.0",
     "ember-disable-proxy-controllers": "^1.0.0",
     "ember-export-application-global": "^1.0.2",
-    "ember-disable-prototype-extensions": "^1.0.0",
-    "ember-try": "0.0.6"
+    "ember-try": "0.0.6",
+    "esprima": "^2.7.0"
   },
   "keywords": [
     "ember-addon",
@@ -43,7 +44,6 @@
   "dependencies": {
     "ember-cli-babel": "^5.0.0",
     "broccoli-string-replace": "0.1.0",
-    "esprima-harmony": "^7001.1.0-dev-harmony-fb",
     "esprima-walk": "^0.1.0",
     "merge": "^1.2.0",
     "replaceall": "^0.1.6",
