@@ -1,7 +1,6 @@
 # Ember-cli-amd
 
 This addon will dynamically modify `loader.js` to allow it to work in parallel with a separate AMD loader.
-*Thanks to [Jack Rowlingson](https://github.com/jrowlingson) for figuring out how to use an AMD loader and ember-cli loader concurrently.*
 
 [View it live](http://esri.github.io/ember-cli-amd/) using the [ArcGIS API for JavaScript](https://developers.arcgis.com/javascript/).
 
@@ -36,8 +35,8 @@ var app = new EmberApp({
       'put-selector','xstyle','dgrid'
     ],
     // Optional: the AMD configuration. It can be either an object or a file path. The path is relative to the root
-    // of the project as amdConfig: 'config/amd-config.js'. For the object properties, refer to either the dojo or the requirejs 
-    // configuration documentation
+    // of the project as config: 'config/amd-config.js'. For the object properties, refer to either the dojo or the requirejs 
+    // configuration documentation.
     config: {
     },
     // If using a local loader ('dojo' or 'rquirejs'), the path to the AMD library must be provided.
@@ -91,7 +90,7 @@ module.exports = function(defaults) {
   
   var app = new EmberApp(defaults, {
     amd :{
-      loader: 'https://js.arcgis.com/3.14/',
+      loader: 'https://js.arcgis.com/3.15/',
       amdPackages: [
         'esri','dojo','dojox','dijit',
         'put-selector','xstyle','dbind','dgrid'
