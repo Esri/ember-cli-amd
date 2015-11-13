@@ -68,63 +68,6 @@ var app = new EmberApp({
 });
 ```
 
-Update the `index.html` file to allow this addon to add script files as needed.
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>AMDApp</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    {{content-for 'head'}}
-    <link rel="stylesheet" href="assets/vendor.css">
-    <link rel="stylesheet" href="assets/app.css">
-    {{content-for 'head-footer'}}
-    
-  </head>
-  <body>
-    {{content-for 'amd'}}
-    {{content-for 'body'}}
-    <!-- We removed the app and vendor js files as they will be inserted by the addon -->
-    {{content-for 'body-footer'}}
-  </body>
-</html>
-```
-
-Update the `test/index.html` file to allow this addon to add script files as needed.
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>AMDApp Tests</title>
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    {{content-for 'head'}}
-    {{content-for 'test-head'}}
-
-    <link rel="stylesheet" href="assets/vendor.css">
-    <link rel="stylesheet" href="assets/ember-test.css">
-    <link rel="stylesheet" href="assets/test-support.css">
-
-    {{content-for 'head-footer'}}
-    {{content-for 'test-head-footer'}}
-  </head>
-  <body>
-    {{content-for 'amd-test'}}
-    {{content-for 'body'}}
-    {{content-for 'test-body'}}
-    <!-- We removed the app, vendor, and test js files as they will be inserted by the addon -->
-    {{content-for 'body-footer'}}
-    {{content-for 'test-body-footer'}}
-  </body>
-</html>
-```
-
 If using ember-cli-content-security-policy, update this `ENV` object in `config/environment.js` to allow pulling in CDN resources such as with the ArcGIS API for JavaScript.
 ```javascript
 var ENV = {
@@ -163,30 +106,6 @@ module.exports = function(defaults) {
   
   return app.toTree();
 };
-```
-
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>ArcGIS App</title>
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    {{content-for 'head'}}
-    <link rel="stylesheet" href="assets/vendor.css">
-    <link rel="stylesheet" href="assets/arcgis-app.css">
-    {{content-for 'head-footer'}}
-    
-  </head>
-  <body>
-    {{content-for 'amd'}}
-    {{content-for 'body'}}
-    {{content-for 'body-footer'}}
-  </body>
-</html>
 ```
 
 # Running
