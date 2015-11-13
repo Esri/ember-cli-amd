@@ -25,6 +25,7 @@ var requirejs = require('requirejs');
 var _ = require('lodash');
 var merge = require('lodash/object/merge');
 var template = require('lodash/string/template');
+var beautify_js = require('js-beautify');
 var beautify_html = require('js-beautify').html;
 var RSVP = require('rsvp');
 
@@ -294,7 +295,8 @@ var startScriptBuilder = function startScriptBuilder(config) {
     adoptables: adoptablesAsString,
     scripts: config.scriptsAsString
   });
-  fs.writeFileSync(path.join(config.directory, config.startSrc), startScript);
+  
+  fs.writeFileSync(path.join(config.directory, config.startSrc), beautify_js(startScript, { indent_size: 2 }));
 };
 
 module.exports = {
