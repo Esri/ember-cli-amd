@@ -1,0 +1,14 @@
+require(<%= config %>, [
+  <%= names %>
+], function (<%= objects %>) {
+  window._adoptables = [<%= adoptables %>];
+  
+  function recursiveRequire(i, a){
+    if (i >= a.length) return;
+    require([a[i]], function() {
+      recursiveRequire(++i, a);
+    });
+  }
+  
+  recursiveRequire(0, [<%= scripts %>]);
+});

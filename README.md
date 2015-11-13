@@ -27,30 +27,42 @@ Provide a list of packages that will be loaded via an AMD loader such as Require
 // use this in ember-cli-build.js
 // Sample if using the ArcGIS API for JavaScript
 var app = new EmberApp({
-  srcTag: 'https://js.arcgis.com/3.14/', // only needed for CDN, will default to 'built.js' if useRequire = true
-  useRequire: false, // if this is true, srcTag via options is ignored
-  useDojo: false, // if this is true, will inject the Dojo loader instead of RequireJS
-  locale: 'en-us', // will use RequireJS i18n to set the localization
-  amdPackages: [ // user defined AMD packages to search for in application
-    'esri','dojo','dojox','dijit',
-    'put-selector','xstyle','dgrid'
-  ],
-  // will create a dependencies.txt that will list all the
-  // AMD dependencies in the application
-  outputDependencyList: true,
-  amdBase: 'bower_components/amdlibrary', // optional - base folder of AMD library
-  // RequireJS configuration options
-  // Please refere to RequireJS docs for more information
-  // http://requirejs.org/docs/optimization.html
-  requireConfig: {
-    include: [
-      'foo/bar/baz'
+  amd : {
+    // Specify the type of AMD loader. Either a CDN path or a local loader ('dojo' or 'requirejs')
+    loader: 'https://js.arcgis.com/3.15/',
+    // user defined AMD packages to search for in application
+    packages: [
+      'esri','dojo','dojox','dijit',
+      'put-selector','xstyle','dgrid'
     ],
-    exclude: [
-      'lorem/ipsum'
-    ],
-    paths: {
-      'plugins/plugin': 'empty:'
+    // Optional: the AMD configuration. It can be either an object or a file path. The path is relative to the root
+    // of the project as amdConfig: 'config/amd-config.js'. For the object properties, refer to either the dojo or the requirejs 
+    // configuration documentation
+    config: {
+    },
+    // If using a local loader ('dojo' or 'rquirejs'), the path to the AMD library must be provided.
+    libraryPath: 'bower_components/amdlibrary',
+    // When uing a local loader, we will build the AMD module using requirejs into a single file
+    // The following properties allow to control the build
+    // Optional: it defaults to vendor/build.js
+    outputPath: 'vendor/build.js'    
+    // Optional: Will use RequireJS i18n to set the localization, default is 'en-us' 
+    locale: 'en-us', 
+    // Optional: Will create a dependencies.txt that will list all the AMD dependencies in the application, default is false
+    outputDependencyList: true,
+    // RequireJS build configuration options
+    // Please refere to RequireJS docs for more information
+    // http://requirejs.org/docs/optimization.html
+    buildConfig: {
+      include: [
+        'foo/bar/baz'
+      ],
+      exclude: [
+        'lorem/ipsum'
+      ],
+      paths: {
+        'plugins/plugin': 'empty:'
+      }
     }
   }
 });
@@ -67,29 +79,16 @@ Update the `index.html` file to allow this addon to add script files as needed.
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {{content-for 'head'}}
-
-    <link rel="stylesheet" href="http://js.arcgis.com/3.13/esri/css/esri.css">
-
+    <link rel="stylesheet" href="assets/vendor.css">
+    <link rel="stylesheet" href="assets/app.css">
     {{content-for 'head-footer'}}
+    
   </head>
   <body>
-    <!-- This script tag must come before the content-for "amd" block -->
-    <script>
-      // Please refere to RequireJS configuration options
-      // http://requirejs.org/docs/api.html#config
-      // If using Dojo, this configuration will be treated like dojoConfig.
-      // Please refer to Dojo documentation for details
-      // http://dojotoolkit.org/documentation/tutorials/1.10/dojo_config/
-      var reqConfig = {};
-    </script>
-
     {{content-for 'amd'}}
-
     {{content-for 'body'}}
-
-    {{content-for 'body-footer'}}
-
     <!-- We removed the app and vendor js files as they will be inserted by the addon -->
+    {{content-for 'body-footer'}}
   </body>
 </html>
 ```
@@ -109,24 +108,24 @@ Update the `test/index.html` file to allow this addon to add script files as nee
     {{content-for 'test-head'}}
 
     <link rel="stylesheet" href="assets/vendor.css">
-    <link rel="stylesheet" href="assets/ember-esri.css">
+    <link rel="stylesheet" href="assets/ember-test.css">
     <link rel="stylesheet" href="assets/test-support.css">
 
     {{content-for 'head-footer'}}
     {{content-for 'test-head-footer'}}
   </head>
   <body>
-
+    {{content-for 'amd-test'}}
     {{content-for 'body'}}
     {{content-for 'test-body'}}
-    {{content-for 'amd-test'}}
+    <!-- We removed the app, vendor, and test js files as they will be inserted by the addon -->
     {{content-for 'body-footer'}}
     {{content-for 'test-body-footer'}}
   </body>
 </html>
 ```
 
-Update this `ENV` object in `config/environment.js` to allow pulling in CDN resources such as with the ArcGIS API for JavaScript.
+If using ember-cli-content-security-policy, update this `ENV` object in `config/environment.js` to allow pulling in CDN resources such as with the ArcGIS API for JavaScript.
 ```javascript
 var ENV = {
   ...
@@ -146,13 +145,22 @@ var ENV = {
 ```javascript
 // ember-cli-build.js
 module.exports = function(defaults) {
+  
   var app = new EmberApp(defaults, {
-    srcTag: 'https://js.arcgis.com/3.14/',
-    amdPackages: [
-      'esri','dojo','dojox','dijit',
-      'put-selector','xstyle','dbind','dgrid'
-    ]
+    amd :{
+      loader: 'https://js.arcgis.com/3.14/',
+      amdPackages: [
+        'esri','dojo','dojox','dijit',
+        'put-selector','xstyle','dbind','dgrid'
+      ],
+      config: {
+        async: true,
+        locale: 'en-us',
+        isDebug: true
+      }
+    }
   });
+  
   return app.toTree();
 };
 ```
@@ -168,27 +176,14 @@ module.exports = function(defaults) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {{content-for 'head'}}
-
-    <link rel="stylesheet" href="http://js.arcgis.com/3.14/esri/css/esri.css">
     <link rel="stylesheet" href="assets/vendor.css">
     <link rel="stylesheet" href="assets/arcgis-app.css">
-
     {{content-for 'head-footer'}}
+    
   </head>
   <body>
-    <script>
-      var reqConfig = {
-        locale: 'en-us',
-        isDebug: true
-      };
-      var dojoConfig = reqConfig;
-      dojoConfig.async = true;
-    </script>
-
     {{content-for 'amd'}}
-
     {{content-for 'body'}}
-
     {{content-for 'body-footer'}}
   </body>
 </html>
