@@ -43,7 +43,6 @@
   "dependencies": {
     "broccoli-string-replace": "0.1.0",
     "cheerio": "^0.19.0",
-    "ember-cli-babel": "^5.1.5",
     "esprima": "^2.7.0",
     "esprima-walk": "^0.1.0",
     "js-beautify": "^1.5.10",
