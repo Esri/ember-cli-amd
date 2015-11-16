@@ -282,12 +282,11 @@ var startScriptBuilder = function startScriptBuilder(config) {
   var objsAsString = objs.join(',');
   var adoptablesAsString = adoptables.join(',');
 
+  // Set the namesAsString in the return object. It's needed later on.
   config.namesAsString = namesAsString;
 
-  var amdConfig = JSON.stringify(amdOptions.config);
-  if (typeof amdConfig === 'string')
-    amdConfig = 'amdConfig';
-
+  // Create the object used by the template for the start script
+  var amdConfig = JSON.stringify(typeof amdConfig === 'object' ? amdOptions.config : {});
   var startScript = startTemplate({
     config: amdConfig,
     names: namesAsString,

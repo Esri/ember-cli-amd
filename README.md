@@ -34,10 +34,19 @@ var app = new EmberApp({
       'esri','dojo','dojox','dijit',
       'put-selector','xstyle','dgrid'
     ],
-    // Optional: the AMD configuration. It can be either an object or a file path. The path is relative to the root
-    // of the project as config: 'config/amd-config.js'. For the object properties, refer to either the dojo or the requirejs 
-    // configuration documentation.
+    // Optional: the AMD configuration object or the path to the AMD configuration file.
+    // If using a configuration object, the configuration will be used after the loader loaded.
+    // If using a file, the file will be copied to the output directory (./dist) and the configuration file
+    // will be loaded before the loader is loaded. You should use this option if you need to pre-configure the loader.
+    // The configuration file must define the global variable used by the specific loader. For dojo, the global variable is
+    // called `dojoConfig`. For requirejs, the global variable is called `require`. Please refer to the documentation for 
+    // the correct use of the configuration.
     config: {
+      baseUrl: "/another/path",
+      paths: {
+        "some": "some/v1.0"
+      },
+      waitSeconds: 15
     },
     // If using a local loader ('dojo' or 'rquirejs'), the path to the AMD library must be provided.
     libraryPath: 'bower_components/amdlibrary',
