@@ -41,6 +41,9 @@ var outputPaths;
 // to capture the sate
 var modules = [];
 var modulesAsString = '';
+// The list of scripts from inside the index files
+var scriptsAsString;
+var testScriptsAsString;
 // The sha of the config file and the built index files
 var indexSha;
 var testIndexSha;
@@ -401,6 +404,12 @@ module.exports = {
         sha: indexSha,
         startSrc: 'assets/amd-start.js'
       }).then(function (result) {
+        // Save the script list if we got one otherwise reuse the saved one
+        if (result.scriptsAsString)
+          scriptsAsString = result.scriptsAsString;
+        else
+          result.scriptsAsString = scriptsAsString;
+        
         // Save the new sha
         indexSha = result.sha;
         
@@ -425,6 +434,12 @@ module.exports = {
         sha: testIndexSha,
         startSrc: 'assets/amd-test-start.js'
       }).then(function (result) {
+        // Save the script list if we got one otherwise reuse the saved one
+        if (result.scriptsAsString)
+          testScriptsAsString = result.scriptsAsString;
+        else
+          result.scriptsAsString = testScriptsAsString;
+
         // Save the new sha
         testIndexSha = result.sha;
         

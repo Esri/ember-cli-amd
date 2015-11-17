@@ -58,6 +58,9 @@
   },
   "ember-addon": {
     "configPath": "tests/dummy/config",
-    "demoURL": "http://esri.github.io/ember-cli-amd/"
+    "demoURL": "http://esri.github.io/ember-cli-amd/",
+    "paths": [
+      "lib/local-commands"
+    ]
   }
 }
