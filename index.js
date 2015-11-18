@@ -19,8 +19,6 @@ var sha = require('sha1');
 var cheerio = require('cheerio');
 var esprima = require('esprima');
 var eswalk = require('esprima-walk');
-var replaceall = require('replaceall');
-var strip = require('strip-comments');
 var requirejs = require('requirejs');
 var _ = require('lodash');
 var merge = require('lodash/object/merge');
@@ -354,7 +352,7 @@ module.exports = {
     return _.uniq(amdModules).sort();
   },
 
-  amdBuilder: function (modulesAsString, directory) {
+  amdBuilder: function (directory) {
     
     // Get the list of modules, we will use it to compare it against the previous one an decide
     // what needs to be rebuilt.    

@@ -49,12 +49,9 @@
     "js-beautify": "^1.5.10",
     "lodash": "^3.10.1",
     "merge": "^1.2.0",
-    "replaceall": "^0.1.6",
     "requirejs": "^2.1.18",
     "rsvp": "^3.1.0",
-    "sha1": "^1.1.1",
-    "string-template": "^0.2.1",
-    "strip-comments": "^0.3.2"
+    "sha1": "^1.1.1"
   },
   "ember-addon": {
     "configPath": "tests/dummy/config",
