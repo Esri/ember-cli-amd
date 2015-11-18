@@ -174,43 +174,6 @@ var getAMDModule = function getAMDModule(node, packages) {
   return isAMD ? module : null;
 };
 
-var adoptFunction = "function adopt() {\n" +
-  "      if (typeof _adoptables !== 'undefined') {\n" +
-  "        adopt = Function('');\n" +
-  "        var len = _adoptables.length;\n" +
-  "        var i = 0;\n" +
-  "        while (i < len--) {\n" +
-  "          var adoptee = _adoptables[len];\n" +
-  "          if (adoptee !== undefined) {\n" +
-  "            registry[adoptee.name] = new Module(adoptee.name, [], []);\n" +
-  "            seen[adoptee.name] = adoptee.obj['default'] = adoptee.obj;\n" +
-  "          }\n" +
-  "        }\n" +
-  "      }\n" +
-  "    }\n";
-
-var addAdopts = function addAdopts(f) {
-  if (f.indexOf('adopt()') > 0) {
-    return f;
-  } else {
-    var stripped = strip(f);
-
-    var _f = stripped.replace(/\r?\n|\r/g, '^^^');
-    var txt1 = 'requireModule = function(name) {';
-    var idx1 = _f.indexOf(txt1);
-    var _f1 = _f.slice(0, idx1 + txt1.length);
-    var _f2 = _f.slice(idx1 + txt1.length, _f.length);
-    var str = _f1 + '\r    adopt();\n' + _f2; // adding adopt();
-
-    var txt2 = 'return (seen[name] = obj);^^^  };';
-    var idx2 = str.indexOf(txt2); // found it, add adopt function here
-    var f1 = str.slice(0, idx2 + txt2.length);
-    var f2 = str.slice(idx2 + txt2.length, str.length);
-    var f3 = f1 + '\r\r' + adoptFunction + f2;
-    return replaceall('^^^', '\n', f3);
-  }
-};
-
 var indexBuilder = function indexBuilder(config) {
   
   // Load the index file    
@@ -295,7 +258,8 @@ var startScriptBuilder = function startScriptBuilder(config) {
     names: namesAsString,
     objects: objsAsString,
     adoptables: adoptablesAsString,
-    scripts: config.scriptsAsString
+    scripts: config.scriptsAsString,
+    vendor: path.parse(outputPaths.vendor.js).name
   });
   
   fs.writeFileSync(path.join(config.directory, config.startSrc), beautify_js(startScript, { indent_size: 2 }));
@@ -336,15 +300,6 @@ module.exports = {
 
     if ((amdOptions.loader === 'requirejs' || amdOptions.loader === 'dojo') && !amdOptions.libraryPath) {
       throw new Error('ember-cli-amd: When using a local loader, you must specify its location with the amdBase property in the amd options in ember-cli-build.js.');
-    }
-
-    // We need to update the ember loader. We inject a function in it.
-    // Preserve the original loader under loader.original.js
-    var ldr = fs.readFileSync(app.options.loader, 'utf8');
-    if (ldr.indexOf('adopt()') < 0) {
-      fs.writeFileSync(app.options.loader + '.original.js', ldr);
-      var ldr_ = addAdopts(ldr);
-      fs.writeFileSync(app.options.loader, ldr_);
     }
   },
 
@@ -394,7 +349,7 @@ module.exports = {
         .pipe(fs.createWriteStream(path.join(result.directory, 'assets/amd-config.js')));
     }
     
-    // the amd builder is asynchronous. Ember-cli supports async addon functions.    
+    // the amd builder is asynchronous. Ember-cli supports async addon functions. 
     return amdBuilder(result.directory).then(function (amdRefreshed) {
     
       // Rebuild the index files
