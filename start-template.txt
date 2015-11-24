@@ -1,5 +1,4 @@
-var amdConfig = <%= config %>; 
-require(amdConfig, [
+require([
   <%= names %>
 ], function (<%= objects %>) {
   var adoptables = [<%= adoptables %>];

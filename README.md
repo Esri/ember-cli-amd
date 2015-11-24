@@ -34,20 +34,13 @@ var app = new EmberApp({
       'esri','dojo','dojox','dijit',
       'put-selector','xstyle','dgrid'
     ],
-    // Optional: the AMD configuration object or the path to the AMD configuration file.
-    // If using a configuration object, the configuration will be used after the loader loaded.
-    // If using a file, the file will be copied to the output directory (./dist) and the configuration file
-    // will be loaded before the loader is loaded. You should use this option if you need to pre-configure the loader.
-    // The configuration file must define the global variable used by the specific loader. For dojo, the global variable is
-    // called `dojoConfig`. For requirejs, the global variable is called `require`. Please refer to the documentation for 
-    // the correct use of the configuration.
-    config: {
-      baseUrl: "/another/path",
-      paths: {
-        "some": "some/v1.0"
-      },
-      waitSeconds: 15
-    },
+    // Optional: the AMD configuration file path relative to the project root.
+    // The file will be copied to the output directory (./dist) and the configuration file
+    // will be loaded before the loader is loaded. The configuration file must define the global variable used by the specific loader. 
+    // For dojo, the supported global variable name are `dojoConfig`, `djConfig` or `require`. 
+    // For requirejs, the global variable is called `require`. 
+    // Please refer to the documentation for the correct use of the configuration object.
+    configPath: 'config/dojo-config.js',
     // If using a local loader ('dojo' or 'rquirejs'), the path to the AMD library must be provided.
     libraryPath: 'bower_components/amdlibrary',
     // When uing a local loader, we will build the AMD module using requirejs into a single file
@@ -103,17 +96,19 @@ module.exports = function(defaults) {
       amdPackages: [
         'esri','dojo','dojox','dijit',
         'put-selector','xstyle','dbind','dgrid'
-      ],
-      config: {
-        async: true,
-        locale: 'en-us',
-        isDebug: true
-      }
+      ]
     }
   });
   
   return app.toTree();
 };
+```
+
+```javascript
+// config/amd-config.js if using dojo
+var dojoConfig = {
+  async: true
+}; 
 ```
 
 # Running
