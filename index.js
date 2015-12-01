@@ -176,7 +176,6 @@ module.exports = {
     var baseUrl = '';
     if(this.app.options.fingerprint && this.app.options.fingerprint.prepend){
       baseUrl = this.app.options.fingerprint.prepend;
-      console.info('ember-cli-amd: prepending  ' + baseUrl + ' for amd scripts.');
     }
 
     // the amd builder is asynchronous. Ember-cli supports async addon functions. 
