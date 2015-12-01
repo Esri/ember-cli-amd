@@ -111,6 +111,9 @@ var dojoConfig = {
 }; 
 ```
 
+# Using a CDN for your application's assets
+When using `ember-cli-deploy` it is common to deploy the assets of an ember application to a different location (cdn) from the `index.html`. The [ember-cli-deploy](http://ember-cli.com/ember-cli-deploy/docs/v0.5.x/fingerprinting/) documentation discusess how to use fingerprinting to prepend fully-qualified urls to the asset locations. As of v0.4.1 of `ember-cli-amd` these same options are applied to the AMD related scripts that are injected into the page, thus allowing this to work smoothly with `ember-cli-deploy`.
+
 # Running
 
 * `ember server`
