@@ -172,7 +172,12 @@ module.exports = {
       fs.createReadStream(path.join(root, this.app.options.amd.configPath))
         .pipe(fs.createWriteStream(path.join(result.directory, 'assets/amd-config.js')));
     }
-    
+
+    var baseUrl = '';
+    if(this.app.options.fingerprint && this.app.options.fingerprint.prepend){
+      baseUrl = this.app.options.fingerprint.prepend;
+    }
+
     // the amd builder is asynchronous. Ember-cli supports async addon functions. 
     return this.amdBuilder(result.directory).then(function () {
     
@@ -181,7 +186,8 @@ module.exports = {
         directory: result.directory,
         indexFile: this.app.options.outputPaths.app.html,
         sha: indexSha,
-        startSrc: 'assets/amd-start.js'
+        startSrc: 'assets/amd-start.js',
+        baseUrl: baseUrl
       }).then(function (result) {
         // Save the script list if we got one otherwise reuse the saved one
         if (result.scriptsAsString)
@@ -207,7 +213,8 @@ module.exports = {
         directory: result.directory,
         indexFile: 'tests/index.html',
         sha: testIndexSha,
-        startSrc: 'assets/amd-test-start.js'
+        startSrc: 'assets/amd-test-start.js',
+        baseUrl: baseUrl
       }).then(function (result) {
         // Save the script list if we got one otherwise reuse the saved one
         if (result.scriptsAsString)
@@ -267,13 +274,16 @@ module.exports = {
     
       // Add to the body the amd loading code
       var amdScripts = '';
-      if (this.app.options.amd.configPath)
-        amdScripts += '<script src="assets/amd-config.js">';
+      if (this.app.options.amd.configPath){
+        amdScripts += '<script src="' + config.baseUrl + 'assets/amd-config.js"></script>';
+      }
 
       var loaderSrc = this.app.options.amd.loader;
-      if (loaderSrc === 'requirejs' || loaderSrc === 'dojo')
-        loaderSrc = 'assets/built.js';
-      amdScripts += '</script><script src="' + loaderSrc + '"></script><script src="' + config.startSrc + '"></script>';
+      if (loaderSrc === 'requirejs' || loaderSrc === 'dojo'){
+        loaderSrc = config.baseUrl + 'assets/built.js';
+      }
+      amdScripts += '<script src="' + loaderSrc + '"></script>';
+      amdScripts += '<script src="' + config.baseUrl + config.startSrc + '"></script>';
       
       $('body').prepend(amdScripts);    
     
