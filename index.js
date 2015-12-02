@@ -123,7 +123,7 @@ module.exports = {
 
   postprocessTree: function (type, tree) {
     if (!this.app.options.amd)
-      return;
+      return tree;
 
     if (type !== 'all')
       return tree;
