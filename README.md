@@ -34,11 +34,11 @@ var app = new EmberApp({
       'esri','dojo','dojox','dijit',
       'put-selector','xstyle','dgrid'
     ],
-    // Optional: the AMD configuration file path relative to the project root.
+    // Required the AMD configuration file path relative to the project root.
     // The file will be copied to the output directory (./dist) and the configuration file
-    // will be loaded before the loader is loaded. The configuration file must define the global variable used by the specific loader. 
-    // For dojo, the supported global variable name are `dojoConfig`, `djConfig` or `require`. 
-    // For requirejs, the global variable is called `require`. 
+    // will be loaded before the loader is loaded. The configuration file must define the global variable used by the specific loader.
+    // For dojo, the supported global variable name are `dojoConfig`, `djConfig` or `require`.
+    // For requirejs, the global variable is called `require`.
     // Please refer to the documentation for the correct use of the configuration object.
     configPath: 'config/dojo-config.js',
     // If using a local loader ('dojo' or 'rquirejs'), the path to the AMD library must be provided.
@@ -46,9 +46,9 @@ var app = new EmberApp({
     // When uing a local loader, we will build the AMD module using requirejs into a single file
     // The following properties allow to control the build
     // Optional: it defaults to vendor/build.js
-    outputPath: 'vendor/build.js'    
-    // Optional: Will use RequireJS i18n to set the localization, default is 'en-us' 
-    locale: 'en-us', 
+    outputPath: 'vendor/build.js'
+    // Optional: Will use RequireJS i18n to set the localization, default is 'en-us'
+    locale: 'en-us',
     // Optional: Will create a dependencies.txt that will list all the AMD dependencies in the application, default is false
     outputDependencyList: true,
     // RequireJS build configuration options
@@ -89,26 +89,27 @@ var ENV = {
 ```javascript
 // ember-cli-build.js
 module.exports = function(defaults) {
-  
+
   var app = new EmberApp(defaults, {
     amd :{
       loader: 'https://js.arcgis.com/3.15/',
+      configPath: 'config/dojo-config.js',
       amdPackages: [
         'esri','dojo','dojox','dijit',
         'put-selector','xstyle','dbind','dgrid'
       ]
     }
   });
-  
+
   return app.toTree();
 };
 ```
 
 ```javascript
-// config/amd-config.js if using dojo
+// config/dojo-config.js if using dojo
 var dojoConfig = {
   async: true
-}; 
+};
 ```
 
 # Using a CDN for your application's assets
