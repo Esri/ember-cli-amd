@@ -19,7 +19,7 @@ This addon will dynamically modify `loader.js` to allow it to work in parallel w
 
 Install to your ember-cli application
 
-* `npm install --save-dev ember-cli-amd`
+* `ember install ember-cli-amd`
 
 Provide a list of packages that will be loaded via an AMD loader such as RequireJS or Dojo. You can also provide the source for the loader.
 ```javascript
