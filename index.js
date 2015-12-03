@@ -108,6 +108,7 @@ module.exports = {
       loader: 'requirejs',
       packages: [],
       outputDependencyList: false,
+      inline:false,
       buildOuput: 'assets/built.js'
     }, app.options.amd);
         
@@ -160,19 +161,20 @@ module.exports = {
     return stringReplace(dataTree, testLoader);
   },
 
+  /**
+   * Post-Build hook
+   * @param  {object} result Inbound build information
+   * @return {Promise}        Promise
+   */
   postBuild: function (result) {
     if (!this.app.options.amd)
       return; 
       
     // When ember build --watch or ember serve are used, this function will be called over and over 
     // as a user updates code. We need to figure what we have to build or copy.
-  
-    // Copy the amd config file into the output.
-    if (this.app.options.amd.configPath) {
-      fs.createReadStream(path.join(root, this.app.options.amd.configPath))
-        .pipe(fs.createWriteStream(path.join(result.directory, 'assets/amd-config.js')));
-    }
 
+    //check if fingerprinting is setup, and if a prepend is set
+    //and use that as a baseUrl for our scripts
     var baseUrl = '';
     if (this.app.options.fingerprint && this.app.options.fingerprint.enabled && this.app.options.fingerprint.prepend) {
       baseUrl = this.app.options.fingerprint.prepend;
@@ -186,7 +188,9 @@ module.exports = {
         directory: result.directory,
         indexFile: this.app.options.outputPaths.app.html,
         sha: indexSha,
+        configPath: this.app.options.amd.configPath,
         startSrc: 'assets/amd-start.js',
+        inline: this.app.options.amd.inline,
         baseUrl: baseUrl
       }).then(function (result) {
         // Save the script list if we got one otherwise reuse the saved one
@@ -197,10 +201,6 @@ module.exports = {
         
         // Save the new sha
         indexSha = result.sha;
-
-        // The list of scripts has changed or the list of amd modules has changed, either way rebuld the
-        // start script
-        this.startScriptBuilder(result);
 
         // If requested, save the list of modules used
         if (!this.app.options.amd.outputDependencyList)
@@ -213,9 +213,12 @@ module.exports = {
         directory: result.directory,
         indexFile: 'tests/index.html',
         sha: testIndexSha,
+        configPath: this.app.options.amd.configPath,
         startSrc: 'assets/amd-test-start.js',
+        inline: this.app.options.amd.inline,
         baseUrl: baseUrl
       }).then(function (result) {
+
         // Save the script list if we got one otherwise reuse the saved one
         if (result.scriptsAsString)
           testScriptsAsString = result.scriptsAsString;
@@ -225,21 +228,88 @@ module.exports = {
         // Save the new sha
         testIndexSha = result.sha;
 
-        // The list of scripts has changed or the list of amd modules has changed, either way rebuld the
-        // start script
-        this.startScriptBuilder(result);
       }.bind(this)).catch(function () {
         // If there is no tests/index.html, the function will reject
         return;
       });
 
       return RSVP.all([indexPromise, testIndexPromise]);
+      //return RSVP.all([indexPromise]);
     }.bind(this));
   },
 
   indexBuilder: function (config) {
+    //----------------------------------------------------------------------------
+    //STEPS:
+    //1 - handle the configFile if defined
+    //1 - get script names from index.html
+    //2 - cook the amd-start script as a string
+    //3 - if inline === true : inline the scripts
+    //  - if inline === false : add script tags to the amd-start/amd-config files
+    //----------------------------------------------------------------------------
     
-    // Load the index file    
+    // Full path to the index file    
+    var indexPath = path.join(config.directory, config.indexFile);
+
+    //1 - deal with the amd config file if defined
+    var amdConfigInfo = this.handleAmdConfig(config);
+
+    var self = this;
+    //2 - get the scripts from index.html
+    return this.getScriptsFromIndex(indexPath)
+      .then(function(scripts){
+        config.scriptsAsString = scripts;
+        //3- create the start script
+        var amdStartScriptInfo = self.startScriptBuilder(config);  
+        //if we are inlining...
+        if(config.inline){
+          config.amdConfig = amdConfigInfo.amdConfig;
+          config.amdStart = amdStartScriptInfo.amdStart;
+          return self.inlineScripts(config);
+        }else{
+          config.amdConfigFileName = amdConfigInfo.amdConfigFileName;
+          config.amdStartFileName = amdStartScriptInfo.amdStartFileName;
+          return self.replaceScripts(config);
+        }
+      })
+      .then(function(result){
+        return result;
+      });
+  },
+
+  /**
+   * If configured, read the amd config file into a string.
+   * If we are not inlining scripts, compute the hash, and 
+   * write to a fingerprinted file
+   * @param  {object} config Configuration object
+   * @return {object}        amdConfig object
+   */
+  handleAmdConfig: function(config){
+    var result = {
+      amdConfig: null,
+      amdConfigFileName:''
+    };
+    // If an amd config file is defined...
+    if (config.configPath) {
+      //read the file contents and cook a sha for it
+      result.amdConfig = fs.readFileSync(path.join(root, config.configPath), 'utf8');
+      //if we are not inlining...
+      if(!config.inline){
+        //fingerprint it and copy it to the output
+        var amdConfigSha = sha(result.amdConfig);
+        result.amdConfigFileName = 'assets/amd-config-' + amdConfigSha + '.js';
+        fs.writeFileSync(path.join(config.directory, result.amdConfigFileName), result.amdConfig);
+      }
+    }
+    return result;
+  },
+
+  /**
+   * Inline the amd-config and amd-start scripts
+   * @param  {Object} config Configuration for this function
+   * @return {Promise}        Promise
+   */
+  inlineScripts: function(config){
     var deferred = RSVP.defer();
     var indexPath = path.join(config.directory, config.indexFile);
     fs.readFile(indexPath, 'utf8', function (err, indexHtml) {
@@ -251,7 +321,7 @@ module.exports = {
       // Sha the index file and check if we need to rebuild the index file
       var newIndexSha = sha(indexHtml);
       config.refreshed = config.sha !== newIndexSha;
-  
+    
       // If the indx file is still the same then we can leave  
       if (!config.refreshed) {
         deferred.resolve(config);
@@ -261,21 +331,78 @@ module.exports = {
       // Get the collection of scripts 
       var $ = cheerio.load(indexHtml);
       var scriptElements = $('body > script');
-      var scripts = [];
+      // Remove the scripts tag
       scriptElements.filter(function () {
         return $(this).attr('src') !== undefined;
-      }).each(function () {
-        scripts.push("'" + $(this).attr('src') + "'");
-      });
-      config.scriptsAsString = scripts.join(',');
-    
-      // Remove the scripts tag
-      scriptElements.remove();
+      }).remove();
     
       // Add to the body the amd loading code
       var amdScripts = '';
-      if (this.app.options.amd.configPath){
-        amdScripts += '<script src="' + config.baseUrl + 'assets/amd-config.js"></script>';
+      //if (this.app.options.amd.configPath){
+      if(config.amdConfig){
+        amdScripts += '<script>' + config.amdConfig + '</script>';
+      }
+
+      var loaderSrc = this.app.options.amd.loader;
+      //TODO: Determine if we can or should inline or fingerprint this file
+      if (loaderSrc === 'requirejs' || loaderSrc === 'dojo'){
+        loaderSrc = config.baseUrl + 'assets/built.js';
+      }
+      amdScripts += '<script src="' + loaderSrc + '"></script>';
+
+      amdScripts += '<script>' + config.amdStart + '</script>';
+      
+      $('body').prepend(amdScripts);    
+    
+      // Sha the new index
+      var html = $.html();//beautify_html($.html(), { indent_size: 2 });
+      config.sha = sha(html);
+    
+      // Rewrite the index file
+      fs.writeFileSync(indexPath, html);
+
+      deferred.resolve(config);
+    }.bind(this));
+
+    return deferred.promise;
+  },
+  /**
+   * Remove the body script tags from index, and replace
+   * them with the fingerprinted amd config and start scripts
+   * @param  {Object} config Configuration for this function
+   * @return {Promise}        Promise
+   */
+  replaceScripts: function(config){
+    var deferred = RSVP.defer();
+    var indexPath = path.join(config.directory, config.indexFile);
+    fs.readFile(indexPath, 'utf8', function (err, indexHtml) {
+      if (err) {
+        deferred.reject(err);
+        return;
+      }
+      
+      // Sha the index file and check if we need to rebuild the index file
+      var newIndexSha = sha(indexHtml);
+      config.refreshed = config.sha !== newIndexSha;
+    
+      // If the indx file is still the same then we can leave  
+      if (!config.refreshed) {
+        deferred.resolve(config);
+        return;
+      }
+            
+      // Get the collection of scripts 
+      var $ = cheerio.load(indexHtml);
+      var scriptElements = $('body > script');
+      scriptElements.filter(function () {
+        return $(this).attr('src') !== undefined;
+      }).remove();
+    
+      // Add to the body the amd loading code
+      var amdScripts = '';
+      //if (this.app.options.amd.configPath){
+      if(config.amdConfigFileName){
+        amdScripts += '<script src="' + config.baseUrl + config.amdConfigFileName + '"></script>';
       }
 
       var loaderSrc = this.app.options.amd.loader;
@@ -283,12 +410,12 @@ module.exports = {
         loaderSrc = config.baseUrl + 'assets/built.js';
       }
       amdScripts += '<script src="' + loaderSrc + '"></script>';
-      amdScripts += '<script src="' + config.baseUrl + config.startSrc + '"></script>';
+      amdScripts += '<script src="' + config.baseUrl + config.amdStartFileName + '"></script>';
       
       $('body').prepend(amdScripts);    
     
       // Sha the new index
-      var html = beautify_html($.html(), { indent_size: 2 });
+      var html = $.html();//beautify_html($.html(), { indent_size: 2 });
       config.sha = sha(html);
     
       // Rewrite the index file
@@ -300,7 +427,51 @@ module.exports = {
     return deferred.promise;
   },
 
+
+  /**
+   * Get a list of scripts from the Index file. This will
+   * return the fingerprinted, prepended script urls which
+   * we can then use in the creation of the AMD start script
+   * @param  {string} indexFilePath Path to the index html file
+   * @return {string}               Comma delimted string of scripts
+   */
+  getScriptsFromIndex: function(indexFilePath){
+    var deferred = RSVP.defer();
+    fs.readFile(indexFilePath, 'utf8', function (err, indexHtml) {
+      if (err) {
+        deferred.reject(err);
+        return;
+      }
+      // Get the collection of scripts 
+      var $ = cheerio.load(indexHtml);
+      //only pull scripts from the body. Allows head scripts to be left inplace
+      //which is good for global libs loaded from cdns
+      var scriptElements = $('body > script');
+      var scripts = [];
+      scriptElements.filter(function () {
+        return $(this).attr('src') !== undefined;
+      }).each(function () {
+        scripts.push("'" + $(this).attr('src') + "'");
+      });
+      var scriptsAsString = scripts.join(',');
+      
+      //return the string of script names
+      deferred.resolve(scriptsAsString);
+
+    }.bind(this));
+
+    return deferred.promise;
+  },
+
+  /**
+   * Build the start script that will load all the amd modules
+   * and then, when vendor-*.js is loaded, register them with 
+   * Ember's loader
+   * @param  {Object} config config object
+   * @return {string}        Start Script as a string
+   */
   startScriptBuilder: function (config) {
+    
     // Write the amd-start.js file    
     // Build different arrays representing the modules for the injection in the start script
     var objs = modules.map(function (module, i) { return 'mod' + i; });
@@ -322,8 +493,22 @@ module.exports = {
       scripts: config.scriptsAsString,
       vendor: path.parse(this.app.options.outputPaths.vendor.js).name
     });
+    
+    var fileSha = sha(startScript);
 
-    fs.writeFileSync(path.join(config.directory, config.startSrc), beautify_js(startScript, { indent_size: 2 }));
+    var hashedFileName = config.startSrc.split('.js')[0] + '-' +fileSha + '.js';
+    
+    //only write out the file if we are not inlining it
+    if(!config.inline){
+      fs.writeFileSync(path.join(config.directory, hashedFileName), beautify_js(startScript, { indent_size: 2 }));  
+    }
+
+    var result = {
+      amdStartFileName: hashedFileName,
+      amdStart: startScript
+    };
+    
+    return result;
   },
 
   findAMDModules: function () {
