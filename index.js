@@ -174,7 +174,7 @@ module.exports = {
     }
 
     var baseUrl = '';
-    if(this.app.options.fingerprint && this.app.options.fingerprint.prepend){
+    if (this.app.options.fingerprint && this.app.options.fingerprint.enabled && this.app.options.fingerprint.prepend) {
       baseUrl = this.app.options.fingerprint.prepend;
     }
 
