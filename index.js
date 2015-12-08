@@ -171,8 +171,6 @@ module.exports = {
     if (!this.app.options.amd)
       return;
 
-      console.info('POST BUILD CONFIG:', result);
-      console.info('app.options.outputPaths:', this.app.options.outputPaths);
     // When ember build --watch or ember serve are used, this function will be called over and over
     // as a user updates code. We need to figure what we have to build or copy.
 
@@ -185,22 +183,24 @@ module.exports = {
 
     // the amd builder is asynchronous. Ember-cli supports async addon functions.
     return this.amdBuilder(result.directory).then(function () {
-      console.log('before main Index Builder...');
+
       // Rebuild the index files
       var indexPromise = this.indexBuilder({
         directory: result.directory,
         indexFile: this.app.options.outputPaths.app.html,
         sha: indexSha,
+        configPath: this.app.options.amd.configPath,
         startSrc: 'assets/amd-start.js',
+        inline: this.app.options.amd.inline,
         baseUrl: baseUrl
       }).then(function (result) {
-        console.log('after main indexBuilder: result', result.scriptsAsString);
         // Save the script list if we got one otherwise reuse the saved one
-        if (result.scriptsAsString){
+        if (result && result.scriptsAsString){
           scriptsAsString = result.scriptsAsString;
         }else{
           result.scriptsAsString = scriptsAsString;
         }
+
         // Save the new sha
         indexSha = result.sha;
 
@@ -210,22 +210,22 @@ module.exports = {
 
         fs.writeFileSync(path.join(result.directory, 'dependencies.txt'), result.namesAsString);
       }.bind(this));
-      console.log('before test Index Builder...');
+
       var testIndexPromise = this.indexBuilder({
         directory: result.directory,
         indexFile: 'tests/index.html',
         sha: testIndexSha,
+        configPath: this.app.options.amd.configPath,
         startSrc: 'assets/amd-test-start.js',
         inline: this.app.options.amd.inline,
         baseUrl: baseUrl
       }).then(function (result) {
-        console.log('TEST result.scriptsAsString', result.scriptsAsString);
+
         // Save the script list if we got one otherwise reuse the saved one
-        if (result.scriptsAsString){
+        if (result.scriptsAsString)
           testScriptsAsString = result.scriptsAsString;
-        }else{
+        else
           result.scriptsAsString = testScriptsAsString;
-        }
 
         // Save the new sha
         testIndexSha = result.sha;
@@ -259,12 +259,11 @@ module.exports = {
     //2 - get the scripts from index.html
     return this.getScriptsFromIndex(indexPath)
       .then(function(scripts){
-        console.log('In indexBuilder - after getScriptsFromIndex: ' + scripts);
         config.scriptsAsString = scripts;
         //3- create the start script
         var amdStartScriptInfo = this.startScriptBuilder(config);
         //assign the vars
-        if(this.app.options.amd.inline){
+        if(config.inline){
           config.amdConfig = amdConfigInfo.amdConfig;
           config.amdStart = amdStartScriptInfo.amdStart;
         }else{
@@ -273,6 +272,7 @@ module.exports = {
         }
         //update the index file
         return this.updateIndex(config);
+
       }.bind(this));
 
   },
@@ -290,11 +290,11 @@ module.exports = {
       amdConfigFileName:''
     };
     // If an amd config file is defined...
-    if (this.app.options.amd.configPath) {
+    if (config.configPath) {
       //read the file contents and cook a sha for it
-      result.amdConfig = fs.readFileSync(path.join(root, this.app.options.amd.configPath), 'utf8');
+      result.amdConfig = fs.readFileSync(path.join(root, config.configPath), 'utf8');
       //if we are not inlining...
-      if(!this.app.options.amd.inline){
+      if(!config.inline){
         //fingerprint it and copy it to the output
         var amdConfigSha = sha(result.amdConfig);
         result.amdConfigFileName = 'assets/amd-config-' + amdConfigSha + '.js';
@@ -321,39 +321,44 @@ module.exports = {
 
     // If the indx file is still the same then we can leave
     if (!config.refreshed) {
-      //deferred.resolve(config);
-      return;
+      return config;
     }
 
     // Get the collection of scripts
     var $ = cheerio.load(indexHtml);
     var scriptElements = $('body > script');
-    //remove them if they have src defined
-    //this allows other scripts to be in the body with payloads
     scriptElements.filter(function () {
       return $(this).attr('src') !== undefined;
     }).remove();
+
 
     var loaderSrc = this.app.options.amd.loader;
     if (loaderSrc === 'requirejs' || loaderSrc === 'dojo'){
       loaderSrc = config.baseUrl + 'assets/built.js';
     }
-    var amdScripts =  '<script src="' + loaderSrc + '"></script>';
-
+    var amdScripts = '';
     //if we are inlineing the scripts...
-    if(this.app.options.amd.inline){
+    if(config.inline){
       //if the amdConfig has been passed in...
       if(config.amdConfig){
         amdScripts += '<script>' + config.amdConfig + '</script>';
       }
+      //order matters for these script tags, so we can't put this
+      //above the if(...) block
+      amdScripts += '<script src="' + loaderSrc + '"></script>';
       amdScripts += '<script>' + config.amdStart + '</script>';
+
     }else{
       //or we are using external files - possibly from CDN etc
       if(config.amdConfigFileName){
         amdScripts += '<script src="' + config.baseUrl + config.amdConfigFileName + '"></script>';
       }
+      //order matters for these script tags, so we can't put this
+      //above the if(...) block
+      amdScripts += '<script src="' + loaderSrc + '"></script>';
       amdScripts += '<script src="' + config.baseUrl + config.amdStartFileName + '"></script>';
     }
+
     //either case, update the doc
     $('body').prepend(amdScripts);
     // Sha the new index
@@ -361,7 +366,7 @@ module.exports = {
     config.sha = sha(html);
     // Rewrite the index file
     fs.writeFileSync(indexPath, html);
-    console.log('End of updateIndex: ' , config.scriptsAsString);
+
     return config;
   },
 
@@ -391,7 +396,7 @@ module.exports = {
         scripts.push("'" + $(this).attr('src') + "'");
       });
       var scriptsAsString = scripts.join(',');
-      console.info('GOT SCRIPTS FROM INDEX: ' + scriptsAsString);
+
       //return the string of script names
       deferred.resolve(scriptsAsString);
 
