@@ -51,6 +51,10 @@ var app = new EmberApp({
     locale: 'en-us',
     // Optional: Will create a dependencies.txt that will list all the AMD dependencies in the application, default is false
     outputDependencyList: true,
+    // Optional, defaults to false. If `true` the amd-start and amd-config scripts will be inlined into index.html
+    // This saves xhrs during application boot, so unless you are generating your index.html file on the fly (i.e. from node or rails)
+    // you should likely enable this.
+    inline: true,
     // RequireJS build configuration options
     // Please refere to RequireJS docs for more information
     // http://requirejs.org/docs/optimization.html

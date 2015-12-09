@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.2]
+### Added
+- support for inlining of scripts
+### Changed
+- if not inlined, the amd-start and amd-config scripts are fingerprinted to enable cache-busting
+- also ensured that other script tags in the body are not removed (i.e. google analytics)
+- removed debugging cruft from `start-templates.txt`
 
 ## [0.4.1]
 ### Added
