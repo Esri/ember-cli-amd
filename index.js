@@ -42,12 +42,14 @@ var indexHtml = {
   app: {
     original: '',
     amd: '',
-    scriptsAsString: ''
+    scriptsAsString: '',
+    modulesAsString: ''
   },
   test: {
     original: '',
     amd: '',
-    scriptsAsString: ''
+    scriptsAsString: '',
+    modulesAsString: ''
   }
 };
 // i18n locale
@@ -232,6 +234,9 @@ module.exports = {
         }
       }
 
+      // Get the modules information
+      var modulesInfo = this.getModulesInfo();
+
       // Rebuild the app index files
       var indexBuildResult = this.indexBuilder({
         directory: result.directory,
@@ -239,6 +244,7 @@ module.exports = {
         indexHtml: indexHtml.app,
         amdConfigScript: amdConfigScript,
         startSrc: 'amd-start',
+        modules: modulesInfo
       });
 
       // If requested, save the list of modules used
@@ -253,6 +259,7 @@ module.exports = {
         indexHtml: indexHtml.test,
         amdConfigScript: amdConfigScript,
         startSrc: 'amd-test-start',
+        modules: modulesInfo
       });
     }.bind(this));
   },
@@ -263,7 +270,7 @@ module.exports = {
     // this is the first time this extension is running
     var indexPath = path.join(config.directory, config.indexFile);
     var currentIndexHtml = fs.readFileSync(indexPath, 'utf8');
-    if (currentIndexHtml !== config.indexHtml.amd) {
+    if (!config.indexHtml.original) {
       config.indexHtml.original = currentIndexHtml;
     }
 
@@ -276,7 +283,16 @@ module.exports = {
     }).each(function() {
       scripts.push("'" + $(this).attr('src') + "'");
     });
-    config.indexHtml.scriptsAsString = scripts.join(',');
+    var scriptsAsString = scripts.join(',');
+
+    // Check if we have to continue
+    if (config.indexHtml.scriptsAsString === scriptsAsString && config.indexHtml.modulesAsString === config.modules.names) {
+      return;
+    }
+
+    // We have to rebuild this index file. Cache the new properties
+    config.indexHtml.scriptsAsString = scriptsAsString;
+    config.indexHtml.modulesAsString = config.modules.names;
 
     // Remove the scripts tag
     scriptElements.remove();
@@ -299,7 +315,10 @@ module.exports = {
     amdScripts += '<script src="' + loaderSrc + '"></script>';
 
     // Add the start scripts
-    var startScript = this.getStartScript(config);
+    var startScript = startTemplate(_.assign(config.modules, {
+      scripts: scriptsAsString
+    }));
+
     if (this.app.options.amd.inline) {
       // Inline the start script
       amdScripts += '<script>' + startScript + '</script>';
@@ -332,11 +351,14 @@ module.exports = {
     // Rewrite the index file
     fs.writeFileSync(indexPath, html);
 
+    // Save the index we built for futire comparaison
+    config.indexHtml.amd = html;
+
     return config;
   },
 
-  getStartScript: function(config) {
-    // Write the amd-start.js file
+  getModulesInfo: function() {
+
     // Build different arrays representing the modules for the injection in the start script
     var objs = modules.map(function(module, i) {
       return 'mod' + i;
@@ -348,21 +370,12 @@ module.exports = {
       return '{name:' + name + ',obj:' + objs[i] + '}';
     });
 
-    var namesAsString = names.join(',');
-    var objsAsString = objs.join(',');
-    var adoptablesAsString = adoptables.join(',');
-
-    // Set the namesAsString in the return object. It's needed later on.
-    config.namesAsString = namesAsString;
-
-    // Create the object used by the template for the start script
-    config.startScript = startTemplate({
-      names: namesAsString,
-      objects: objsAsString,
-      adoptables: adoptablesAsString,
-      scripts: config.indexHtml.scriptsAsString,
+    return {
+      names: names.join(','),
+      objects: objs.join(','),
+      adoptables: adoptables.join(','),
       vendor: path.parse(this.app.options.outputPaths.vendor.js).name
-    });
+    };
   },
 
   findAMDModules: function() {
