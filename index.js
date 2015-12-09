@@ -269,7 +269,7 @@ module.exports = {
 
     // Get the collection of scripts
     var $ = cheerio.load(config.indexHtml.original);
-    var scriptElements = config.$('body > script');
+    var scriptElements = $('body > script');
     var scripts = [];
     scriptElements.filter(function() {
       return $(this).attr('src') !== undefined;
