@@ -269,7 +269,15 @@ module.exports = {
     // that another extension must have forced to regenerate the index html or
     // this is the first time this extension is running
     var indexPath = path.join(config.directory, config.indexFile);
-    var currentIndexHtml = fs.readFileSync(indexPath, 'utf8');
+
+    var currentIndexHtml;
+    try {
+      currentIndexHtml = fs.readFileSync(indexPath, 'utf8');
+    } catch (e) {
+      // no index file, we are done.
+      return;
+    }
+
     if (!config.indexHtml.original) {
       config.indexHtml.original = currentIndexHtml;
     }
