@@ -297,7 +297,13 @@ module.exports = {
       if(!config.inline){
         //fingerprint it and copy it to the output
         var amdConfigSha = sha(result.amdConfig);
-        result.amdConfigFileName = 'assets/amd-config-' + amdConfigSha + '.js';
+        result.amdConfigFileName = 'assets/amd-config.js';
+        
+        //only fingerprint if fingerprinting is enabled
+        if(this.app.options.fingerprint && this.app.options.fingerprint.enabled){
+          result.amdConfigFileName = 'assets/amd-config-' + amdConfigSha + '.js';
+        }
+
         fs.writeFileSync(path.join(config.directory, result.amdConfigFileName), result.amdConfig);
       }
     }
@@ -438,15 +444,18 @@ module.exports = {
 
     var fileSha = sha(startScript);
 
-    var hashedFileName = config.startSrc.split('.js')[0] + '-' +fileSha + '.js';
-
+    var fileName = config.startSrc;
+    //only hash the name if fingerprinting is enabled
+    if(this.app.options.fingerprint && this.app.options.fingerprint.enabled){
+      fileName = config.startSrc.split('.js')[0] + '-' +fileSha + '.js';
+    }
     //only write out the file if we are not inlining it
     if(!config.inline){
-      fs.writeFileSync(path.join(config.directory, hashedFileName), beautify_js(startScript, { indent_size: 2 }));
+      fs.writeFileSync(path.join(config.directory, fileName), beautify_js(startScript, { indent_size: 2 }));
     }
 
     var result = {
-      amdStartFileName: hashedFileName,
+      amdStartFileName: fileName,
       amdStart: startScript
     };
 
