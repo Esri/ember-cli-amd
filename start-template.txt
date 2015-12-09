@@ -2,19 +2,19 @@ require([
   <%= names %>
 ], function (<%= objects %>) {
   var adoptables = [<%= adoptables %>];
-  
-  var re = new RegExp('<%= vendor %>(.*js)');
-  function recursiveRequire(i, a){
-    if (i >= a.length) return;
-    require([a[i]], function() {
-      if (re.test(a[i])){
+  var isVendor = new RegExp('<%= vendor %>(.*js)');
+  function recursiveRequire(i, scripts){
+    if (i >= scripts.length) {
+      return;
+    }
+    require([scripts[i]], function() {
+      if (isVendor.test(scripts[i])) {
         adoptables.forEach(function(adoptable){
           efineday(adoptable.name, [], function(){return adoptable.obj;});
         });
       }
-      recursiveRequire(++i, a);
+      recursiveRequire(++i, scripts);
     });
   }
-  
   recursiveRequire(0, [<%= scripts %>]);
 });

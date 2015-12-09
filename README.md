@@ -43,7 +43,7 @@ var app = new EmberApp({
     configPath: 'config/dojo-config.js',
     // If using a local loader ('dojo' or 'rquirejs'), the path to the AMD library must be provided.
     libraryPath: 'bower_components/amdlibrary',
-    // When uing a local loader, we will build the AMD module using requirejs into a single file
+    // When using a local loader, we will build the AMD module using requirejs into a single file
     // The following properties allow to control the build
     // Optional: it defaults to vendor/build.js
     outputPath: 'vendor/build.js'
@@ -51,8 +51,12 @@ var app = new EmberApp({
     locale: 'en-us',
     // Optional: Will create a dependencies.txt that will list all the AMD dependencies in the application, default is false
     outputDependencyList: true,
+    // Optional, defaults to true. If `true` the amd-start and amd-config scripts will be inlined into index.html.
+    // This saves xhrs during application boot, so unless you are generating your index.html file on the fly (i.e. from node or rails)
+    // you should likely enable this.
+    inline: true,
     // RequireJS build configuration options
-    // Please refere to RequireJS docs for more information
+    // Please refer to RequireJS docs for more information
     // http://requirejs.org/docs/optimization.html
     buildConfig: {
       include: [
@@ -160,4 +164,3 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 A copy of the license is available in the repository's [LICENSE.md](LICENSE.md) file.
-
