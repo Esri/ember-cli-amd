@@ -13,4 +13,3 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - if not inlined, the amd-start and amd-config scripts are fingerprinted to enable cache-busting
 - also ensured that other script tags in the body are not removed (i.e. google analytics)
-- removed debugging cruft from `start-templates.txt`
