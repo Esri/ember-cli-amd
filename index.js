@@ -37,19 +37,23 @@ var fingerprintBaseUrl = '';
 // to capture the sate
 var modules = [];
 var modulesAsString = '';
-// The original index files. We use this to rebuild the amd index files
+// For contiinuous build, we need to cache a series of properties
 var indexHtml = {
   app: {
     original: '',
     amd: '',
     scriptsAsString: '',
-    modulesAsString: ''
+    modulesAsString: '',
+    startScript: '',
+    startFileName: ''
   },
   test: {
     original: '',
     amd: '',
     scriptsAsString: '',
-    modulesAsString: ''
+    modulesAsString: '',
+    startScript: '',
+    startFileName: ''
   }
 };
 // i18n locale
@@ -58,7 +62,7 @@ var locale;
 var startTemplate = template(fs.readFileSync(path.join(__dirname, 'start-template.txt'), 'utf8'));
 
 var modulesToString = function modulesToString(modules) {
-  return modules.map(function(module) {
+  return modules.map(function (module) {
     return '"' + module + '"';
   }).join(',');
 };
@@ -66,7 +70,7 @@ var walk = function walk(dir) {
   // Recursively walk thru a directory and returns the collection of files
   var results = [];
   var list = fs.readdirSync(dir);
-  list.forEach(function(file) {
+  list.forEach(function (file) {
     file = path.join(dir, file);
     var stat = fs.statSync(file);
     if (stat && stat.isDirectory()) results = results.concat(walk(file));
@@ -92,7 +96,7 @@ var getAMDModule = function getAMDModule(node, packages) {
 
   // Test if the module name starts with one of the AMD package names.
   // If so then it's an AMD module we can return it otherwise return null.
-  var isAMD = packages.some(function(p) {
+  var isAMD = packages.some(function (p) {
     return module.indexOf(p + '/') === 0;
   });
 
@@ -103,7 +107,7 @@ module.exports = {
 
   name: 'ember-cli-amd',
 
-  included: function(app) {
+  included: function (app) {
     // Note: this functionis only called once even if using ember build --watch or ember serve
 
     // This is the entry point for this addon. We will collect the amd definitions from the ember-cli-build.js and
@@ -140,7 +144,7 @@ module.exports = {
     }
   },
 
-  postprocessTree: function(type, tree) {
+  postprocessTree: function (type, tree) {
     if (!this.app.options.amd)
       return tree;
 
@@ -185,7 +189,7 @@ module.exports = {
     return stringReplace(dataTree, testLoader);
   },
 
-  postBuild: function(result) {
+  postBuild: function (result) {
 
     if (!this.app.options.amd)
       return;
@@ -196,7 +200,7 @@ module.exports = {
     // the amd builder will build the amd into a single file using requirejs build if requested.
     // If using a cdn for the amd library, this function is no-op. When the build is finished, we can update the
     // index files.
-    return this.amdBuilder(result.directory).then(function() {
+    return this.amdBuilder(result.directory).then(function () {
 
       // There are two index files to deal with, the app index file and the test index file.
       // We need to convert them from ember style to amd style.
@@ -237,8 +241,13 @@ module.exports = {
       // Get the modules information
       var modulesInfo = this.getModulesInfo();
 
+      // If requested, save the list of modules used
+      if (this.app.options.amd.outputDependencyList) {
+        fs.writeFileSync(path.join(result.directory, 'dependencies.txt'), modulesInfo.names);
+      }
+
       // Rebuild the app index files
-      var indexBuildResult = this.indexBuilder({
+      var appIndexBuildResult = this.indexBuilder({
         directory: result.directory,
         indexFile: this.app.options.outputPaths.app.html,
         indexHtml: indexHtml.app,
@@ -247,13 +256,15 @@ module.exports = {
         modules: modulesInfo
       });
 
-      // If requested, save the list of modules used
-      if (this.app.options.amd.outputDependencyList) {
-        fs.writeFileSync(path.join(result.directory, 'dependencies.txt'), indexBuildResult.namesAsString);
+      // If we are not inlining, then we need to save the start script
+      if (!this.app.options.amd.inline) {
+        fs.writeFileSync(path.join(result.directory, appIndexBuildResult.startFileName), beautify_js(appIndexBuildResult.startScript, {
+          indent_size: 2
+        }));
       }
 
       // Rebuild the test index file
-      this.indexBuilder({
+      var testIndexBuildResult = this.indexBuilder({
         directory: result.directory,
         indexFile: 'tests/index.html',
         indexHtml: indexHtml.test,
@@ -261,10 +272,21 @@ module.exports = {
         startSrc: 'amd-test-start',
         modules: modulesInfo
       });
+
+      if (!testIndexBuildResult)
+        return;
+
+      // If we are not inlining, then we need to save the start script
+      if (!this.app.options.amd.inline) {
+        fs.writeFileSync(path.join(result.directory, testIndexBuildResult.startFileName), beautify_js(testIndexBuildResult.startScript, {
+          indent_size: 2
+        }));
+      }
+
     }.bind(this));
   },
 
-  indexBuilder: function(config) {
+  indexBuilder: function (config) {
     // If the current index html is not the same as teh one we built, it means
     // that another extension must have forced to regenerate the index html or
     // this is the first time this extension is running
@@ -275,18 +297,18 @@ module.exports = {
       currentIndexHtml = fs.readFileSync(indexPath, 'utf8');
     } catch (e) {
       // no index file, we are done.
-      return;
+      return null;
     }
 
     // Check if we have to continue
     // - if the current index file match the one we built then the index file has not been regenerated
     // - if the list of modules is still the same
     if (currentIndexHtml === config.indexHtml.amd && config.indexHtml.modulesAsString === config.modules.names) {
-      return;
+      return config.indexHtml;
     }
 
     // If the current index file do not match the one we built, it's new one that got regenerated
-    if (config.indexHtml.amd !== currentIndexHtml){
+    if (config.indexHtml.amd !== currentIndexHtml) {
       config.indexHtml.original = currentIndexHtml;
     }
 
@@ -295,9 +317,9 @@ module.exports = {
     var $ = cheerio.load(config.indexHtml.original);
     var scriptElements = $('body > script');
     var scripts = [];
-    scriptElements.filter(function() {
+    scriptElements.filter(function () {
       return $(this).attr('src') !== undefined;
-    }).each(function() {
+    }).each(function () {
       scripts.push("'" + $(this).attr('src') + "'");
     });
 
@@ -342,12 +364,12 @@ module.exports = {
       }
       startFileName += '.js';
 
-      // If we are not inlining, then we need to save the start script
-      fs.writeFileSync(path.join(config.directory, startFileName), beautify_js(startScript, {
-        indent_size: 2
-      }));
+      // Save the file name and the script. We will save the file later.
+      // The start script file needs to be saved each time the app is rebuilt in continuous build
+      config.indexHtml.startFileName = startFileName;
+      config.indexHtml.startScript = startScript;
 
-      // Add the script tag
+      // All what we need to do for now is add the script tag
       amdScripts += '<script src="' + fingerprintBaseUrl + startFileName + '"></script>';
     }
 
@@ -365,19 +387,19 @@ module.exports = {
     // Save the index we built for futire comparaison
     config.indexHtml.amd = html;
 
-    return config;
+    return config.indexHtml;
   },
 
-  getModulesInfo: function() {
+  getModulesInfo: function () {
 
     // Build different arrays representing the modules for the injection in the start script
-    var objs = modules.map(function(module, i) {
+    var objs = modules.map(function (module, i) {
       return 'mod' + i;
     });
-    var names = modules.map(function(module) {
+    var names = modules.map(function (module) {
       return "'" + module + "'";
     });
-    var adoptables = names.map(function(name, i) {
+    var adoptables = names.map(function (name, i) {
       return '{name:' + name + ',obj:' + objs[i] + '}';
     });
 
@@ -389,17 +411,17 @@ module.exports = {
     };
   },
 
-  findAMDModules: function() {
+  findAMDModules: function () {
 
     // Get the list of javascript files fromt the application
-    var jsFiles = walk(path.join(root, 'app')).filter(function(file) {
+    var jsFiles = walk(path.join(root, 'app')).filter(function (file) {
       return file.indexOf('.js') > -1;
     });
 
     // Collect the list of modules used from the amd packages
     var amdModules = [];
     var packages = this.app.options.amd.packages;
-    jsFiles.forEach(function(file) {
+    jsFiles.forEach(function (file) {
       // Use esprima to parse the javascript file and build the code tree
       var f = fs.readFileSync(file, 'utf8');
       var ast = esprima.parse(f, {
@@ -407,7 +429,7 @@ module.exports = {
       });
 
       // Walk thru the esprima nodes and collect the amd modules from the import statements
-      eswalk(ast, function(node) {
+      eswalk(ast, function (node) {
         var amdModule = getAMDModule(node, packages);
         if (!amdModule)
           return;
@@ -418,7 +440,7 @@ module.exports = {
     return _.uniq(amdModules).sort();
   },
 
-  amdBuilder: function(directory) {
+  amdBuilder: function (directory) {
 
     // Refresh the list of modules
     modules = this.findAMDModules();
@@ -457,9 +479,9 @@ module.exports = {
       buildConfig.include = ['../requirejs/require'];
 
     // Merge the user build config and the default build config and build
-    requirejs.optimize(merge(this.app.options.amd.buildConfig, buildConfig), function() {
+    requirejs.optimize(merge(this.app.options.amd.buildConfig, buildConfig), function () {
       deferred.resolve();
-    }, function(err) {
+    }, function (err) {
       deferred.reject(err);
     });
 
