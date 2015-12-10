@@ -278,11 +278,20 @@ module.exports = {
       return;
     }
 
-    if (!config.indexHtml.original) {
+    // Check if we have to continue
+    // - if the current index file match the one we built then the index file has not been regenerated
+    // - if the list of modules is still the same
+    if (currentIndexHtml === config.indexHtml.amd && config.indexHtml.modulesAsString === config.modules.names) {
+      return;
+    }
+
+    // If the current index file do not match the one we built, it's new one that got regenerated
+    if (config.indexHtml.amd !== currentIndexHtml){
       config.indexHtml.original = currentIndexHtml;
     }
 
-    // Get the collection of scripts
+    // Get the collection of scripts from the original index file
+    // Note that we don't cae about re-computing this list
     var $ = cheerio.load(config.indexHtml.original);
     var scriptElements = $('body > script');
     var scripts = [];
@@ -291,15 +300,9 @@ module.exports = {
     }).each(function() {
       scripts.push("'" + $(this).attr('src') + "'");
     });
-    var scriptsAsString = scripts.join(',');
-
-    // Check if we have to continue
-    if (config.indexHtml.scriptsAsString === scriptsAsString && config.indexHtml.modulesAsString === config.modules.names) {
-      return;
-    }
 
     // We have to rebuild this index file. Cache the new properties
-    config.indexHtml.scriptsAsString = scriptsAsString;
+    config.indexHtml.scriptsAsString = scripts.join(',');
     config.indexHtml.modulesAsString = config.modules.names;
 
     // Remove the scripts tag
@@ -324,7 +327,7 @@ module.exports = {
 
     // Add the start scripts
     var startScript = startTemplate(_.assign(config.modules, {
-      scripts: scriptsAsString
+      scripts: config.indexHtml.scriptsAsString
     }));
 
     if (this.app.options.amd.inline) {
