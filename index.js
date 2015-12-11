@@ -317,9 +317,10 @@ module.exports = {
     var $ = cheerio.load(config.indexHtml.original);
     var scriptElements = $('body > script');
     var scripts = [];
-    scriptElements.filter(function () {
+    var scriptsWithSrc = scriptElements.filter(function () {
       return $(this).attr('src') !== undefined;
-    }).each(function () {
+    });
+    scriptsWithSrc.each(function () {
       scripts.push("'" + $(this).attr('src') + "'");
     });
 
@@ -327,8 +328,8 @@ module.exports = {
     config.indexHtml.scriptsAsString = scripts.join(',');
     config.indexHtml.modulesAsString = config.modules.names;
 
-    // Remove the scripts tag
-    scriptElements.remove();
+    // Remove the scripts tagcd
+    scriptsWithSrc.remove();
 
     // Add the amd config
     var amdScripts = '';
