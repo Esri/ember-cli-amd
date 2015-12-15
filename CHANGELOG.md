@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## [0.4.6]
+### Fix
+- Fix esprima parsing issue for functions with parameters with a default value
+
 ## [0.4.5]
 ### Changed
 - Only scripts with src !== undefined are removed from the body. This allows us to put Google Analytics in the page or other json payloads
