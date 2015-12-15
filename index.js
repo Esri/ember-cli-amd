@@ -81,6 +81,10 @@ var walk = function walk(dir) {
 
 var getAMDModule = function getAMDModule(node, packages) {
 
+  // It's possible that esprima parsed some nodes as undefined
+  if (!node)
+    return null;
+
   // We are only interested by the import declarations
   if (node.type !== 'ImportDeclaration')
     return null;
