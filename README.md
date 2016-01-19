@@ -98,7 +98,7 @@ module.exports = function(defaults) {
     amd :{
       loader: 'https://js.arcgis.com/3.15/',
       configPath: 'config/dojo-config.js',
-      amdPackages: [
+      packages: [
         'esri','dojo','dojox','dijit',
         'put-selector','xstyle','dbind','dgrid'
       ]
