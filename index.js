@@ -177,6 +177,7 @@ module.exports = {
     var dataTree = stringReplace(tree, data);
 
     // Special case for the test loader that is doing some funky stuff with require
+    // We basically decided to pig latin all require cases.
     var testLoader = {
       files: [
         new RegExp(path.parse(outputPaths.testSupport.js.testLoader).name + '(.*js)')
@@ -185,8 +186,17 @@ module.exports = {
         match: /(\W|^|["])define(\W|["]|$)/g,
         replacement: '$1efineday$2'
       }, {
-        match: /[^.]require([(])/g,
+        match: /require([.])/g,
+        replacement: 'equireray.'
+      }, {
+        match: /require([(])/g,
         replacement: 'equireray('
+      }, {
+        match: /require([ ])/g,
+        replacement: 'equireray '
+      }, {
+        match: /requirejs([.])/g,
+        replacement: 'equireray.'
       }]
     };
 
