@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.7]
+### Fix
+- Fix regular expression check for "require" in test loader
 
 ## [0.4.6]
 ### Fix
