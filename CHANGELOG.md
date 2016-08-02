@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+- Add support for package main shorthand in module names
+
 ## [0.4.7]
 ### Fix
 - Fix regular expression check for "require" in test loader
