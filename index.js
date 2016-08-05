@@ -167,7 +167,7 @@ module.exports = {
         new RegExp(path.parse(outputPaths.testSupport.js.testSupport).name + '(.*js)')
       ],
       patterns: [{
-        match: /(\W|^|["])define(\W|["]|$)/g,
+        match: /([^A-Za-z0-9_#]|^|["])define(\W|["]|$)/g,
         replacement: '$1efineday$2'
       }, {
         match: /(\W|^|["])require(\W|["]|$)/g,
