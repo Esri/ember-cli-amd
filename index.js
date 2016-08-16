@@ -129,7 +129,7 @@ module.exports = {
       loader: 'requirejs',
       packages: [],
       outputDependencyList: false,
-      buildOuput: 'assets/built.js',
+      buildOutput: 'assets/built.js',
       inline: true
     }, app.options.amd);
 

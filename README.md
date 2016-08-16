@@ -45,8 +45,8 @@ var app = new EmberApp({
     libraryPath: 'bower_components/amdlibrary',
     // When using a local loader, we will build the AMD module using requirejs into a single file
     // The following properties allow to control the build
-    // Optional: it defaults to vendor/build.js
-    outputPath: 'vendor/build.js'
+    // Optional: it defaults to assets/built.js
+    buildOutput: 'assets/built.js'
     // Optional: Will use RequireJS i18n to set the localization, default is 'en-us'
     locale: 'en-us',
     // Optional: Will create a dependencies.txt that will list all the AMD dependencies in the application, default is false
