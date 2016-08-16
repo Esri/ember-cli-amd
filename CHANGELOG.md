@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 - Don't replace #define with #efineday
+- Add support for package main shorthand in module names
 
 ## [0.4.7]
 ### Fix

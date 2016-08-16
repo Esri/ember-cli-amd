@@ -101,7 +101,7 @@ var getAMDModule = function getAMDModule(node, packages) {
   // Test if the module name starts with one of the AMD package names.
   // If so then it's an AMD module we can return it otherwise return null.
   var isAMD = packages.some(function (p) {
-    return module.indexOf(p + '/') === 0;
+    return module.indexOf(p + '/') === 0 || module === p;
   });
 
   return isAMD ? module : null;
