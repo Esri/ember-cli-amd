@@ -433,6 +433,22 @@ module.exports = {
       return file.indexOf('.js') > -1;
     });
 
+    // Allows for custom paths to be searched
+    let amdModulePaths = this.app.options.amd.amdModulePaths || [];
+    amdModulePaths.forEach(function(amdModulePath) {
+      var amdModuleFSPath = path.join(root, amdModulePath);
+
+      var customJsFiles = [];
+      // Check that the path exists before walking
+      if (fs.existsSync(amdModuleFSPath)) {
+        customJsFiles = walk(amdModuleFSPath).filter(function(file) {
+          return file.indexOf('.js') > -1;
+        });
+      }
+
+      jsFiles = jsFiles.concat(customJsFiles);
+    });
+
     // Collect the list of modules used from the amd packages
     var amdModules = [];
     var packages = this.app.options.amd.packages;
