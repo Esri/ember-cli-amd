@@ -430,7 +430,7 @@ module.exports = {
 
     // Get the list of javascript files fromt the application
     var jsFiles = walk(path.join(root, 'app')).filter(function (file) {
-      return file.indexOf('.js') > -1;
+      return path.extname(file) === '.js';
     });
 
     // Allows for custom paths to be searched
@@ -442,7 +442,7 @@ module.exports = {
       // Check that the path exists before walking
       if (fs.existsSync(amdModuleFSPath)) {
         customJsFiles = walk(amdModuleFSPath).filter(function(file) {
-          return file.indexOf('.js') > -1;
+          return path.extname(file) === '.js';
         });
       }
 
