@@ -430,7 +430,23 @@ module.exports = {
 
     // Get the list of javascript files fromt the application
     var jsFiles = walk(path.join(root, 'app')).filter(function (file) {
-      return file.indexOf('.js') > -1;
+      return path.extname(file) === '.js';
+    });
+
+    // Allows for custom paths to be searched
+    let amdModulePaths = this.app.options.amd.amdModulePaths || [];
+    amdModulePaths.forEach(function(amdModulePath) {
+      var amdModuleFSPath = path.join(root, amdModulePath);
+
+      var customJsFiles = [];
+      // Check that the path exists before walking
+      if (fs.existsSync(amdModuleFSPath)) {
+        customJsFiles = walk(amdModuleFSPath).filter(function(file) {
+          return path.extname(file) === '.js';
+        });
+      }
+
+      jsFiles = jsFiles.concat(customJsFiles);
     });
 
     // Collect the list of modules used from the amd packages

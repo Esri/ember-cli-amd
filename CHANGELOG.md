@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+- Add support for addons and custom amd module paths
+
 ## [0.4.8]
 - Don't replace #define with #efineday
 - Add support for package main shorthand in module names
