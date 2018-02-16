@@ -17,6 +17,7 @@
   "license": "MIT",
   "dependencies": {
     "ember-cli-babel": "^6.6.0",
+    "broccoli-derequire": "^0.1.0",
     "broccoli-string-replace": "0.1.0",
     "cheerio": "^1.0.0-rc.2",
     "esprima": "^4.0.0",
