@@ -16,10 +16,9 @@
   "author": "Rene Rubalcava and Jack Rowlingson",
   "license": "MIT",
   "dependencies": {
-    "ember-cli-babel": "^6.6.0",
-    "broccoli-derequire": "^0.1.0",
-    "broccoli-string-replace": "0.1.0",
+    "broccoli-filter": "^1.2.4",
     "cheerio": "^1.0.0-rc.2",
+    "ember-cli-babel": "^6.6.0",
     "esprima": "^4.0.0",
     "esprima-walk": "^0.1.0",
     "js-beautify": "^1.5.10",
