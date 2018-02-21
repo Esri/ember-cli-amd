@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## [0.4.9]
 - Add support for addons and custom amd module paths
 
 ## [0.4.8]
