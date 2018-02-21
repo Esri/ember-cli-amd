@@ -13,7 +13,7 @@
     "test": "ember try:each"
   },
   "repository": "Esri/ember-cli-amd",
-  "author": "Rene Rubalcava and Jack Rowlingson",
+  "author": "Rene Rubalcava, Jack Rowlingson, Fred Aubry",
   "license": "MIT",
   "dependencies": {
     "broccoli-filter": "^1.2.4",

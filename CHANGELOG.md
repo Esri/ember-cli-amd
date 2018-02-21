@@ -4,8 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [1.0.0]
 - Based on Ember 2.18
-- Changed the way we find and replace the conflicting Ember require and define function/references. Insted of using a regex and replacing string occurences, we are no using esprima to only replace Identifiers and Literals.
-## Unreleased
+- Changed the way we find and replace the conflicting Ember require and define function/references. Instead of using a regex and replacing string occurences, we are now using esprima to replace Identifiers and Literals.
+
+## [0.4.9]
 - Add support for addons and custom amd module paths
 
 ## [0.4.8]
