@@ -12,31 +12,34 @@
 /* jshint node: true */
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var stringReplace = require('broccoli-string-replace');
-var sha = require('sha1');
-var cheerio = require('cheerio');
-var esprima = require('esprima');
-var eswalk = require('esprima-walk');
-var requirejs = require('requirejs');
-var _ = require('lodash');
-var merge = require('lodash/object/merge');
-var template = require('lodash/string/template');
-var beautify_js = require('js-beautify');
-var beautify_html = require('js-beautify').html;
-var RSVP = require('rsvp');
+const fs = require('fs');
+const path = require('path');
+const sha = require('sha1');
+const cheerio = require('cheerio');
+const Filter = require('broccoli-filter');
+const esprima = require('esprima');
+const eswalk = require('esprima-walk');
+const requirejs = require('requirejs');
+const _ = require('lodash');
+const merge = require('lodash/object/merge');
+const template = require('lodash/string/template');
+const beautify_js = require('js-beautify');
+const beautify_html = require('js-beautify').html;
+const RSVP = require('rsvp');
 
 // The root of the project
-var root;
+let root;
+
 // The finger printing base urls
 var fingerprintBaseUrl = '';
+
 // The set of AMD module names used in application. If this addon is used under
 // continuous build (ember build --watch or ember serve), we need to verify that
 // things have not changed in between two same function calls. We need variables
 // to capture the sate
 var modules = [];
 var modulesAsString = '';
+
 // For contiinuous build, we need to cache a series of properties
 var indexHtml = {
   app: {
@@ -56,55 +59,22 @@ var indexHtml = {
     startFileName: ''
   }
 };
+
 // i18n locale
 var locale;
+
 // Template used to manufacture the start script
 var startTemplate = template(fs.readFileSync(path.join(__dirname, 'start-template.txt'), 'utf8'));
 
-var modulesToString = function modulesToString(modules) {
-  return modules.map(function (module) {
-    return '"' + module + '"';
-  }).join(',');
-};
-var walk = function walk(dir) {
-  // Recursively walk thru a directory and returns the collection of files
-  var results = [];
-  var list = fs.readdirSync(dir);
-  list.forEach(function (file) {
-    file = path.join(dir, file);
-    var stat = fs.statSync(file);
-    if (stat && stat.isDirectory()) results = results.concat(walk(file));
-    else results.push(file);
-  });
-  return results;
+// Identifiers and Literals to replace in the code to avoid conflict with amd loader
+const identifiers = {
+  'require': 'eriuqer',
+  'define': 'enifed'
 };
 
-var getAMDModule = function getAMDModule(node, packages) {
-
-  // It's possible that esprima parsed some nodes as undefined
-  if (!node)
-    return null;
-
-  // We are only interested by the import declarations
-  if (node.type !== 'ImportDeclaration')
-    return null;
-
-  // Should not happen but we never know
-  if (!node.source || !node.source.value)
-    return null;
-
-  // Should not happen but we never know
-  var module = node.source.value;
-  if (!module.length)
-    return null;
-
-  // Test if the module name starts with one of the AMD package names.
-  // If so then it's an AMD module we can return it otherwise return null.
-  var isAMD = packages.some(function (p) {
-    return module.indexOf(p + '/') === 0 || module === p;
-  });
-
-  return isAMD ? module : null;
+const literals = {
+  'require': '\'eriuqer\'',
+  '(require)': '\'(eriuqer)\''
 };
 
 module.exports = {
@@ -149,64 +119,23 @@ module.exports = {
   },
 
   postprocessTree: function (type, tree) {
-    if (!this.app.options.amd)
+    if (!this.app.options.amd) {
       return tree;
+    }
 
-    if (type !== 'all')
+    if (type !== 'all') {
       return tree;
+    }
 
-    var outputPaths = this.app.options.outputPaths;
-
-    // Create the string replace patterns for the various application files
-    // We will replace require and define function call by their pig-latin version
-    var data = {
-      files: [
-        new RegExp(path.parse(outputPaths.app.js).name + '(.*js)'),
-        new RegExp(path.parse(outputPaths.vendor.js).name + '(.*js)'),
-        new RegExp(path.parse(outputPaths.tests.js).name + '(.*js)'),
-        new RegExp(path.parse(outputPaths.testSupport.js.testSupport).name + '(.*js)')
-      ],
-      patterns: [{
-        match: /([^A-Za-z0-9_#]|^|["])define(\W|["]|$)/g,
-        replacement: '$1efineday$2'
-      }, {
-        match: /(\W|^|["])require(\W|["]|$)/g,
-        replacement: '$1equireray$2'
-      }]
-    };
-    var dataTree = stringReplace(tree, data);
-
-    // Special case for the test loader that is doing some funky stuff with require
-    // We basically decided to pig latin all require cases.
-    var testLoader = {
-      files: [
-        new RegExp(path.parse(outputPaths.testSupport.js.testLoader).name + '(.*js)')
-      ],
-      patterns: [{
-        match: /(\W|^|["])define(\W|["]|$)/g,
-        replacement: '$1efineday$2'
-      }, {
-        match: /require([.])/g,
-        replacement: 'equireray.'
-      }, {
-        match: /require([(])/g,
-        replacement: 'equireray('
-      }, {
-        match: /require([ ])/g,
-        replacement: 'equireray '
-      }, {
-        match: /requirejs([.])/g,
-        replacement: 'equireray.'
-      }]
-    };
-
-    return stringReplace(dataTree, testLoader);
+    // Use the RequireFilter class to replace in the code that conflict with AMD loader
+    return new RequireFilter(tree);
   },
 
   postBuild: function (result) {
 
-    if (!this.app.options.amd)
+    if (!this.app.options.amd) {
       return;
+    }
 
     // When ember build --watch or ember serve are used, this function will be called over and over
     // as a user updates code. We need to figure what we have to build or copy.
@@ -287,8 +216,9 @@ module.exports = {
         modules: modulesInfo
       });
 
-      if (!testIndexBuildResult)
+      if (!testIndexBuildResult) {
         return;
+      }
 
       // If we are not inlining, then we need to save the start script
       if (!this.app.options.amd.inline) {
@@ -328,14 +258,14 @@ module.exports = {
 
     // Get the collection of scripts from the original index file
     // Note that we don't cae about re-computing this list
-    var $ = cheerio.load(config.indexHtml.original);
-    var scriptElements = $('body > script');
+    var cheerioQuery = cheerio.load(config.indexHtml.original);
+    var scriptElements = cheerioQuery('body > script');
     var scripts = [];
     var scriptsWithSrc = scriptElements.filter(function () {
-      return $(this).attr('src') !== undefined;
+      return cheerioQuery(this).attr('src') !== undefined;
     });
     scriptsWithSrc.each(function () {
-      scripts.push("'" + $(this).attr('src') + "'");
+      scripts.push("'" + cheerioQuery(this).attr('src') + "'");
     });
 
     // We have to rebuild this index file. Cache the new properties
@@ -389,10 +319,10 @@ module.exports = {
     }
 
     // Add the scripts to the body
-    $('body').prepend(amdScripts);
+    cheerioQuery('body').prepend(amdScripts);
 
     // Beautify the index.html
-    var html = beautify_html($.html(), {
+    var html = beautify_html(cheerioQuery.html(), {
       indent_size: 2
     });
 
@@ -462,8 +392,9 @@ module.exports = {
       // Walk thru the esprima nodes and collect the amd modules from the import statements
       eswalk(ast, function (node) {
         var amdModule = getAMDModule(node, packages);
-        if (!amdModule)
+        if (!amdModule) {
           return;
+        }
         amdModules.push(amdModule);
       });
     });
@@ -487,8 +418,9 @@ module.exports = {
     }
 
     // For dojo we need to add the dojo module in the list of modules for the build
-    if (this.app.options.amd.loader === 'dojo')
+    if (this.app.options.amd.loader === 'dojo') {
       modulesAsString = '"dojo/dojo",' + modulesAsString;
+    }
 
     // Create the built loader file
     var boot = 'define([' + modulesAsString + '])';
@@ -506,8 +438,9 @@ module.exports = {
     };
 
     // For require js, we need to include the require module in the build via include
-    if (this.app.options.amd.loader === 'requirejs')
+    if (this.app.options.amd.loader === 'requirejs') {
       buildConfig.include = ['../requirejs/require'];
+    }
 
     // Merge the user build config and the default build config and build
     requirejs.optimize(merge(this.app.options.amd.buildConfig, buildConfig), function () {
@@ -519,3 +452,140 @@ module.exports = {
     return deferred.promise;
   }
 };
+
+function modulesToString(modules) {
+  return modules.map(function (module) {
+    return '"' + module + '"';
+  }).join(',');
+}
+
+function walk(dir) {
+  // Recursively walk thru a directory and returns the collection of files
+  var results = [];
+  var list = fs.readdirSync(dir);
+  list.forEach(function (file) {
+    file = path.join(dir, file);
+    var stat = fs.statSync(file);
+    if (stat && stat.isDirectory()) {
+      results = results.concat(walk(file));
+    } else results.push(file);
+  });
+  return results;
+}
+
+function getAMDModule(node, packages) {
+
+  // It's possible that esprima parsed some nodes as undefined
+  if (!node) {
+    return null;
+  }
+
+  // We are only interested by the import declarations
+  if (node.type !== 'ImportDeclaration') {
+    return null;
+  }
+
+  // Should not happen but we never know
+  if (!node.source || !node.source.value) {
+    return null;
+  }
+
+  // Should not happen but we never know
+  var module = node.source.value;
+  if (!module.length) {
+    return null;
+  }
+
+  // Test if the module name starts with one of the AMD package names.
+  // If so then it's an AMD module we can return it otherwise return null.
+  var isAMD = packages.some(function (p) {
+    return module.indexOf(p + '/') === 0 || module === p;
+  });
+
+  return isAMD ? module : null;
+}
+
+//
+// Class for replacing in the generated code the AMD protected keyword 'require' and 'define'.
+// We are replacing these keywords by non conflicting words.
+// It uses the broccoli filter to go thru the different files (as string).
+function RequireFilter(inputTree, options) {
+  if (!(this instanceof RequireFilter)) {
+    return new RequireFilter(inputTree, options);
+  }
+
+  Filter.call(this, inputTree, options); // this._super()
+
+  options = options || {};
+
+  this.inputTree = inputTree;
+  this.files = options.files || [];
+  this.description = options.description;
+}
+
+RequireFilter.prototype = Object.create(Filter.prototype);
+RequireFilter.prototype.constructor = RequireFilter;
+
+RequireFilter.prototype.extensions = ['js'];
+RequireFilter.prototype.targetExtension = 'js';
+
+RequireFilter.prototype.processString = function(code) {
+
+  // Parse the code as an AST
+  const ast = esprima.parseScript(code, {
+    range: true
+  });
+
+  // Split the code into an array for easier substitutions
+  const buffer = code.split('');
+
+  // Walk thru the tree, find and replace our targets
+  eswalk(ast, function (node) {
+    if (!node) {
+      return;
+    }
+
+    switch (node.type) {
+      case 'Identifier':
+        {
+          // We are dealing with code, make sure the node.name is not inherited from object 
+          if (!identifiers.hasOwnProperty(node.name)) {
+            return;
+          }
+
+          const identifier = identifiers[node.name];
+          if (!identifier) {
+            return;
+          }
+
+          write(buffer, identifier, node.range[0]);
+        }
+        return;
+
+      case 'Literal':
+        {
+          // We are dealing with code, make sure the node.name is not inherited from object 
+          if (!literals.hasOwnProperty(node.value)) {
+            return;
+          }
+
+          const literal = literals[node.value];
+          if (!literal) {
+            return;
+          }
+
+          write(buffer, literal, node.range[0]);
+        }
+        return;
+    }
+  });
+
+  // Return the new code
+  return buffer.join('');
+};
+
+function write(arr, str, offset) {
+  for (var i = 0, l = str.length; i < l; i++) {
+    arr[offset + i] = str[i];
+  }
+}

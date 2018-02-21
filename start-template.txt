@@ -10,7 +10,7 @@ require([
     require([scripts[i]], function() {
       if (isVendor.test(scripts[i])) {
         adoptables.forEach(function(adoptable){
-          efineday(adoptable.name, [], function(){return adoptable.obj;});
+          enifed(adoptable.name, [], function(){return adoptable.obj;});
         });
       }
       recursiveRequire(++i, scripts);
