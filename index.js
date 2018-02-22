@@ -26,19 +26,13 @@ const template = require('lodash/string/template');
 const beautify_js = require('js-beautify');
 const beautify_html = require('js-beautify').html;
 const RSVP = require('rsvp');
+var SilentError = require('silent-error');
 
 // The root of the project
 let root;
 
 // The finger printing base urls
 var fingerprintBaseUrl = '';
-
-// The set of AMD module names used in application. If this addon is used under
-// continuous build (ember build --watch or ember serve), we need to verify that
-// things have not changed in between two same function calls. We need variables
-// to capture the sate
-var modules = [];
-var modulesAsString = '';
 
 // For contiinuous build, we need to cache a series of properties
 var indexHtml = {
@@ -60,9 +54,6 @@ var indexHtml = {
   }
 };
 
-// i18n locale
-var locale;
-
 // Template used to manufacture the start script
 var startTemplate = template(fs.readFileSync(path.join(__dirname, 'start-template.txt'), 'utf8'));
 
@@ -81,6 +72,8 @@ module.exports = {
 
   name: 'ember-cli-amd',
 
+  amdModules: new Set(),
+
   included: function (app) {
     // Note: this functionis only called once even if using ember build --watch or ember serve
 
@@ -90,8 +83,7 @@ module.exports = {
 
     // This addon relies on an 'amd' options in the ember-cli-build.js file
     if (!app.options.amd) {
-      console.log('ember-cli-amd: No amd options specified in the ember-cli-build.js file.');
-      return;
+      return new SilentError('ember-cli-amd: No amd options specified in the ember-cli-build.js file.');
     }
 
     // Merge the default options
@@ -119,6 +111,8 @@ module.exports = {
   },
 
   postprocessTree: function (type, tree) {
+    // Note: this function will be called once during the continuous builds. However, the tree returned will be directly manipulated.
+    // It means that the de-requireing will be going on.
     if (!this.app.options.amd) {
       return tree;
     }
@@ -128,7 +122,10 @@ module.exports = {
     }
 
     // Use the RequireFilter class to replace in the code that conflict with AMD loader
-    return new RequireFilter(tree);
+    return new RequireFilter(tree, {
+      amdPackages: this.app.options.amd.packages,
+      amdModules: this.amdModules
+    });
   },
 
   postBuild: function (result) {
@@ -140,10 +137,13 @@ module.exports = {
     // When ember build --watch or ember serve are used, this function will be called over and over
     // as a user updates code. We need to figure what we have to build or copy.
 
+    // Get the modules information
+    const moduleInfos = this.buildModuleInfos();
+
     // the amd builder will build the amd into a single file using requirejs build if requested.
     // If using a cdn for the amd library, this function is no-op. When the build is finished, we can update the
     // index files.
-    return this.amdBuilder(result.directory).then(function () {
+    return this.amdBuilder(result.directory, moduleInfos).then(function () {
 
       // There are two index files to deal with, the app index file and the test index file.
       // We need to convert them from ember style to amd style.
@@ -181,12 +181,9 @@ module.exports = {
         }
       }
 
-      // Get the modules information
-      var modulesInfo = this.getModulesInfo();
-
       // If requested, save the list of modules used
       if (this.app.options.amd.outputDependencyList) {
-        fs.writeFileSync(path.join(result.directory, 'dependencies.txt'), modulesInfo.names);
+        fs.writeFileSync(path.join(result.directory, 'dependencies.txt'), moduleInfos.names);
       }
 
       // Rebuild the app index files
@@ -194,9 +191,9 @@ module.exports = {
         directory: result.directory,
         indexFile: this.app.options.outputPaths.app.html,
         indexHtml: indexHtml.app,
-        amdConfigScript: amdConfigScript,
+        amdConfigScript,
         startSrc: 'amd-start',
-        modules: modulesInfo
+        moduleInfos
       });
 
       // If we are not inlining, then we need to save the start script
@@ -211,9 +208,9 @@ module.exports = {
         directory: result.directory,
         indexFile: 'tests/index.html',
         indexHtml: indexHtml.test,
-        amdConfigScript: amdConfigScript,
+        amdConfigScript,
         startSrc: 'amd-test-start',
-        modules: modulesInfo
+        moduleInfos
       });
 
       if (!testIndexBuildResult) {
@@ -247,7 +244,7 @@ module.exports = {
     // Check if we have to continue
     // - if the current index file match the one we built then the index file has not been regenerated
     // - if the list of modules is still the same
-    if (currentIndexHtml === config.indexHtml.amd && config.indexHtml.modulesAsString === config.modules.names) {
+    if (currentIndexHtml === config.indexHtml.amd && config.indexHtml.modulesAsString === config.moduleInfos.names) {
       return config.indexHtml;
     }
 
@@ -270,7 +267,7 @@ module.exports = {
 
     // We have to rebuild this index file. Cache the new properties
     config.indexHtml.scriptsAsString = scripts.join(',');
-    config.indexHtml.modulesAsString = config.modules.names;
+    config.indexHtml.modulesAsString = config.moduleInfos.names;
 
     // Remove the scripts tagcd
     scriptsWithSrc.remove();
@@ -293,7 +290,7 @@ module.exports = {
     amdScripts += '<script src="' + loaderSrc + '"></script>';
 
     // Add the start scripts
-    var startScript = startTemplate(_.assign(config.modules, {
+    var startScript = startTemplate(_.assign(config.moduleInfos, {
       scripts: config.indexHtml.scriptsAsString
     }));
 
@@ -335,17 +332,18 @@ module.exports = {
     return config.indexHtml;
   },
 
-  getModulesInfo: function () {
+  buildModuleInfos: function () {
 
     // Build different arrays representing the modules for the injection in the start script
-    var objs = modules.map(function (module, i) {
-      return 'mod' + i;
-    });
-    var names = modules.map(function (module) {
-      return "'" + module + "'";
-    });
-    var adoptables = names.map(function (name, i) {
-      return '{name:' + name + ',obj:' + objs[i] + '}';
+    const objs = [];
+    const names = [];
+    const adoptables = [];
+    let index = 0;
+    this.amdModules.forEach(function (amdModule) {
+      objs.push(`mod${index}`);
+      names.push(`'${amdModule}'`);
+      adoptables.push(`{name:'${amdModule}',obj:mod${index}}`);
+      index++;
     });
 
     return {
@@ -356,60 +354,10 @@ module.exports = {
     };
   },
 
-  findAMDModules: function () {
-
-    // Get the list of javascript files fromt the application
-    var jsFiles = walk(path.join(root, 'app')).filter(function (file) {
-      return path.extname(file) === '.js';
-    });
-
-    // Allows for custom paths to be searched
-    let amdModulePaths = this.app.options.amd.amdModulePaths || [];
-    amdModulePaths.forEach(function(amdModulePath) {
-      var amdModuleFSPath = path.join(root, amdModulePath);
-
-      var customJsFiles = [];
-      // Check that the path exists before walking
-      if (fs.existsSync(amdModuleFSPath)) {
-        customJsFiles = walk(amdModuleFSPath).filter(function(file) {
-          return path.extname(file) === '.js';
-        });
-      }
-
-      jsFiles = jsFiles.concat(customJsFiles);
-    });
-
-    // Collect the list of modules used from the amd packages
-    var amdModules = [];
-    var packages = this.app.options.amd.packages;
-    jsFiles.forEach(function (file) {
-      // Use esprima to parse the javascript file and build the code tree
-      var f = fs.readFileSync(file, 'utf8');
-      var ast = esprima.parse(f, {
-        sourceType: 'module'
-      });
-
-      // Walk thru the esprima nodes and collect the amd modules from the import statements
-      eswalk(ast, function (node) {
-        var amdModule = getAMDModule(node, packages);
-        if (!amdModule) {
-          return;
-        }
-        amdModules.push(amdModule);
-      });
-    });
-
-    return _.uniq(amdModules).sort();
-  },
-
-  amdBuilder: function (directory) {
-
-    // Refresh the list of modules
-    modules = this.findAMDModules();
-    modulesAsString = modulesToString(modules);
+  amdBuilder: function (directory, moduleInfos) {
 
     // This is an asynchronous execution. We will use RSVP to be compliant with ember-cli
-    var deferred = RSVP.defer();
+    const deferred = RSVP.defer();
 
     // If we are using the cdn then we don't need to build
     if (this.app.options.amd.loader !== 'dojo' && this.app.options.amd.loader !== 'requirejs') {
@@ -418,8 +366,9 @@ module.exports = {
     }
 
     // For dojo we need to add the dojo module in the list of modules for the build
+    let modulesAsString = moduleInfos.names.join(',');
     if (this.app.options.amd.loader === 'dojo') {
-      modulesAsString = '"dojo/dojo",' + modulesAsString;
+      modulesAsString = `'dojo/dojo',${modulesAsString}`;
     }
 
     // Create the built loader file
@@ -431,7 +380,6 @@ module.exports = {
       baseUrl: this.app.options.amd.libraryPath,
       name: 'main',
       out: path.join(directory, 'assets/built.js'),
-      locale: locale,
       optimize: 'none',
       inlineText: false,
       include: []
@@ -453,58 +401,6 @@ module.exports = {
   }
 };
 
-function modulesToString(modules) {
-  return modules.map(function (module) {
-    return '"' + module + '"';
-  }).join(',');
-}
-
-function walk(dir) {
-  // Recursively walk thru a directory and returns the collection of files
-  var results = [];
-  var list = fs.readdirSync(dir);
-  list.forEach(function (file) {
-    file = path.join(dir, file);
-    var stat = fs.statSync(file);
-    if (stat && stat.isDirectory()) {
-      results = results.concat(walk(file));
-    } else results.push(file);
-  });
-  return results;
-}
-
-function getAMDModule(node, packages) {
-
-  // It's possible that esprima parsed some nodes as undefined
-  if (!node) {
-    return null;
-  }
-
-  // We are only interested by the import declarations
-  if (node.type !== 'ImportDeclaration') {
-    return null;
-  }
-
-  // Should not happen but we never know
-  if (!node.source || !node.source.value) {
-    return null;
-  }
-
-  // Should not happen but we never know
-  var module = node.source.value;
-  if (!module.length) {
-    return null;
-  }
-
-  // Test if the module name starts with one of the AMD package names.
-  // If so then it's an AMD module we can return it otherwise return null.
-  var isAMD = packages.some(function (p) {
-    return module.indexOf(p + '/') === 0 || module === p;
-  });
-
-  return isAMD ? module : null;
-}
-
 //
 // Class for replacing in the generated code the AMD protected keyword 'require' and 'define'.
 // We are replacing these keywords by non conflicting words.
@@ -521,6 +417,8 @@ function RequireFilter(inputTree, options) {
   this.inputTree = inputTree;
   this.files = options.files || [];
   this.description = options.description;
+  this.amdPackages = options.amdPackages || [];
+  this.amdModules = options.amdModules;
 }
 
 RequireFilter.prototype = Object.create(Filter.prototype);
@@ -529,7 +427,7 @@ RequireFilter.prototype.constructor = RequireFilter;
 RequireFilter.prototype.extensions = ['js'];
 RequireFilter.prototype.targetExtension = 'js';
 
-RequireFilter.prototype.processString = function(code) {
+RequireFilter.prototype.processString = function (code) {
 
   // Parse the code as an AST
   const ast = esprima.parseScript(code, {
@@ -538,6 +436,8 @@ RequireFilter.prototype.processString = function(code) {
 
   // Split the code into an array for easier substitutions
   const buffer = code.split('');
+  const amdPackages = this.amdPackages;
+  const amdModules = this.amdModules;
 
   // Walk thru the tree, find and replace our targets
   eswalk(ast, function (node) {
@@ -546,6 +446,40 @@ RequireFilter.prototype.processString = function(code) {
     }
 
     switch (node.type) {
+      case 'CallExpression':
+
+        // Collect the AMD modules
+        // Looking for something like define(<name>, [<module1>, <module2>, ...], <function>)
+        // This is the way ember defines a module
+        if (node.callee.name !== 'define') {
+          return;
+        }
+
+        if (node.arguments.length < 2 || node.arguments[1].type !== 'ArrayExpression' || !node.arguments[1].elements) {
+          return;
+        }
+
+        node.arguments[1].elements.forEach(function (element) {
+          if (element.type !== 'Literal') {
+            return;
+          }
+
+          const isAMD = amdPackages.some(function (amdPackage) {
+            if (typeof element.value !== 'string') {
+              return false;
+            }
+            return element.value.indexOf(amdPackage + '/') === 0 || element.value === amdPackage;
+          });
+
+          if (!isAMD) {
+            return;
+          }
+
+          amdModules.add(element.value);
+
+        });
+        return;
+
       case 'Identifier':
         {
           // We are dealing with code, make sure the node.name is not inherited from object 

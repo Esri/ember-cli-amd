@@ -25,8 +25,9 @@
     "lodash": "^3.10.1",
     "merge": "^1.2.0",
     "requirejs": "^2.1.18",
-    "rsvp": "^4.7.0",
-    "sha1": "^1.1.1"
+    "rsvp": "^4.8.1",
+    "sha1": "^1.1.1",
+    "silent-error": "^1.1.0"
   },
   "devDependencies": {
     "broccoli-asset-rev": "^2.4.5",
