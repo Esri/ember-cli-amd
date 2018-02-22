@@ -17,8 +17,8 @@ This addon will:
 * Uses the [RequireJS Optimizer](http://requirejs.org/docs/optimization.html) for fast builds while coding.
 
 ## Dependencies
-The version 1.x depends on Ember 2.18 and up.
-Prior versions were compatible with Ember 1.13 and up.
+* The version 1.x depends on Ember 2.18 and up.
+* Prior versions were compatible with Ember 1.13 and up.
 
 ## Installation
 
