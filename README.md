@@ -16,12 +16,7 @@ This addon will:
 * Works with AMD CDN libraries, such as [Dojo](https://dojotoolkit.org/download/) or the [ArcGIS API for JavaScript](https://developers.arcgis.com/javascript/).
 * Uses the [RequireJS Optimizer](http://requirejs.org/docs/optimization.html) for fast builds while coding.
 
-## Dependencies
-* The version 1.x depends on Ember 2.18 and up.
-* Prior versions were compatible with Ember 1.13 and up.
-
 ## Installation
-
 * `git clone` this repository
 * `npm install`
 
@@ -144,7 +139,8 @@ When using `ember-cli-deploy` it is common to deploy the assets of an ember appl
 * `ember build`
 
 ## Requirements
-* [ember-cli](http://www.ember-cli.com/) 1.13.0 or greater.
+* Up to version 0.4.9 Ember CLI 1.13.0 or greater.
+* Starting at version 1.0.0 Ember CLI 2.18.0 or greater.
 
 ## Resources
 * For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).
