@@ -61,11 +61,6 @@ var app = new EmberApp({
     locale: 'en-us',
     // Optional: Will create a dependencies.txt that will list all the AMD dependencies in the application, default is false
     outputDependencyList: true,
-    // Optional: Causes the findAMDModules method to search these paths in addition to 'app'
-    // All paths are relative to the project root.
-    // If using this in an addon, you can use 'addon'
-    // If you need amd modules discovered from an ember addon dependency, you can use 'node_modules/addon-name/addon'
-    amdModulePaths: [],
     // Optional, defaults to true. If `true` the amd-start and amd-config scripts will be inlined into index.html.
     // This saves xhrs during application boot, so unless you are generating your index.html file on the fly (i.e. from node or rails)
     // you should likely enable this.
