@@ -21,8 +21,6 @@ const esprima = require('esprima');
 const eswalk = require('esprima-walk');
 const requirejs = require('requirejs');
 const _ = require('lodash');
-const merge = require('lodash/object/merge');
-const template = require('lodash/string/template');
 const beautify_js = require('js-beautify');
 const beautify_html = require('js-beautify').html;
 const RSVP = require('rsvp');
@@ -55,7 +53,7 @@ var indexHtml = {
 };
 
 // Template used to manufacture the start script
-var startTemplate = template(fs.readFileSync(path.join(__dirname, 'start-template.txt'), 'utf8'));
+var startTemplate = _.template(fs.readFileSync(path.join(__dirname, 'start-template.txt'), 'utf8'));
 
 // Identifiers and Literals to replace in the code to avoid conflict with amd loader
 const identifiers = {
@@ -87,7 +85,7 @@ module.exports = {
     }
 
     // Merge the default options
-    app.options.amd = merge({
+    app.options.amd = _.merge({
       loader: 'requirejs',
       packages: [],
       outputDependencyList: false,
@@ -153,7 +151,7 @@ module.exports = {
       // - start of the app: load the amd modules used by the app and boorstrap the app
 
       // Handle the amd config
-      var amdConfigScript;
+      var amdConfigScript = this.app.options.amd.configScript;
       if (this.app.options.amd.configPath) {
 
         // Read the amd config
@@ -391,7 +389,7 @@ module.exports = {
     }
 
     // Merge the user build config and the default build config and build
-    requirejs.optimize(merge(this.app.options.amd.buildConfig, buildConfig), function () {
+    requirejs.optimize(_.merge(this.app.options.amd.buildConfig, buildConfig), function () {
       deferred.resolve();
     }, function (err) {
       deferred.reject(err);

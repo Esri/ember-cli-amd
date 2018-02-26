@@ -1,6 +1,6 @@
 {
   "name": "ember-cli-amd",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Ember CLI Addon that can load AMD modules.",
   "directories": {
     "doc": "doc",
@@ -22,8 +22,7 @@
     "esprima": "^4.0.0",
     "esprima-walk": "^0.1.0",
     "js-beautify": "^1.5.10",
-    "lodash": "^3.10.1",
-    "merge": "^1.2.0",
+    "lodash": "^4.17.5",
     "requirejs": "^2.1.18",
     "rsvp": "^4.8.1",
     "sha1": "^1.1.1",
