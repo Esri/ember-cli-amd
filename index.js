@@ -33,19 +33,13 @@ let root;
 var fingerprintBaseUrl = '';
 
 // For contiinuous build, we need to cache a series of properties
-var indexHtml = {
+var indexHtmlCache = {
   app: {
-    original: '',
-    amd: '',
-    scriptsAsString: '',
     modulesAsString: '',
     startScript: '',
     startFileName: ''
   },
   test: {
-    original: '',
-    amd: '',
-    scriptsAsString: '',
     modulesAsString: '',
     startScript: '',
     startFileName: ''
@@ -188,7 +182,7 @@ module.exports = {
       var appIndexBuildResult = this.indexBuilder({
         directory: result.directory,
         indexFile: this.app.options.outputPaths.app.html,
-        indexHtml: indexHtml.app,
+        indexHtmlCache: indexHtmlCache.app,
         amdConfigScript,
         startSrc: 'amd-start',
         moduleInfos
@@ -205,7 +199,7 @@ module.exports = {
       var testIndexBuildResult = this.indexBuilder({
         directory: result.directory,
         indexFile: 'tests/index.html',
-        indexHtml: indexHtml.test,
+        indexHtmlCache: indexHtmlCache.test,
         amdConfigScript,
         startSrc: 'amd-test-start',
         moduleInfos
@@ -231,43 +225,37 @@ module.exports = {
     // this is the first time this extension is running
     var indexPath = path.join(config.directory, config.indexFile);
 
-    var currentIndexHtml;
+    var indexHtml;
     try {
-      currentIndexHtml = fs.readFileSync(indexPath, 'utf8');
+      indexHtml = fs.readFileSync(indexPath, 'utf8');
     } catch (e) {
       // no index file, we are done.
       return null;
     }
 
     // Check if we have to continue
-    // - if the current index file match the one we built then the index file has not been regenerated
+    // - If the index already contains the AMD loader
     // - if the list of modules is still the same
-    if (currentIndexHtml === config.indexHtml.amd && config.indexHtml.modulesAsString === config.moduleInfos.names) {
-      return config.indexHtml;
+    const cheerioQuery = cheerio.load(indexHtml);
+    const amdScriptElements = cheerioQuery('script[data-amd]')
+    if (amdScriptElements.length === 1 && config.indexHtmlCache.modulesAsString === config.moduleInfos.names) {
+      return config.indexHtmlCache;
     }
 
-    // If the current index file do not match the one we built, it's new one that got regenerated
-    if (config.indexHtml.amd !== currentIndexHtml) {
-      config.indexHtml.original = currentIndexHtml;
-    }
-
-    // Get the collection of scripts from the original index file
-    // Note that we don't cae about re-computing this list
-    var cheerioQuery = cheerio.load(config.indexHtml.original);
+    // Get the collection of scripts that have a 'src'
     var scriptElements = cheerioQuery('body > script');
     var scripts = [];
     var scriptsWithSrc = scriptElements.filter(function () {
       return cheerioQuery(this).attr('src') !== undefined;
     });
     scriptsWithSrc.each(function () {
-      scripts.push("'" + cheerioQuery(this).attr('src') + "'");
+      scripts.push(`"${cheerioQuery(this).attr('src')}"`);
     });
 
-    // We have to rebuild this index file. Cache the new properties
-    config.indexHtml.scriptsAsString = scripts.join(',');
-    config.indexHtml.modulesAsString = config.moduleInfos.names;
+    // We have to rebuild this index file.
+    config.indexHtmlCache.modulesAsString = config.moduleInfos.names;
 
-    // Remove the scripts tagcd
+    // Remove the script tags
     scriptsWithSrc.remove();
 
     // Add the amd config
@@ -278,8 +266,8 @@ module.exports = {
       } else {
         amdScripts += '<script src="' + fingerprintBaseUrl + config.amdConfigScript + '"></script>';
       }
-    } else if (this.app.options.amd.configScript){
-      amdScripts += '<script>' + this.app.options.amd.configScript + '</script>';      
+    } else if (this.app.options.amd.configScript) {
+      amdScripts += '<script>' + this.app.options.amd.configScript + '</script>';
     }
 
     // Add the loader
@@ -287,11 +275,11 @@ module.exports = {
     if (loaderSrc === 'requirejs' || loaderSrc === 'dojo') {
       loaderSrc = config.baseUrl + 'assets/built.js';
     }
-    amdScripts += '<script src="' + loaderSrc + '"></script>';
+    amdScripts += `<script src="${loaderSrc}" data-amd="true"></script>`;
 
     // Add the start scripts
     var startScript = startTemplate(_.assign(config.moduleInfos, {
-      scripts: config.indexHtml.scriptsAsString
+      scripts: scripts.join(',')
     }));
 
     if (this.app.options.amd.inline) {
@@ -308,8 +296,8 @@ module.exports = {
 
       // Save the file name and the script. We will save the file later.
       // The start script file needs to be saved each time the app is rebuilt in continuous build
-      config.indexHtml.startFileName = startFileName;
-      config.indexHtml.startScript = startScript;
+      config.indexHtmlCache.startFileName = startFileName;
+      config.indexHtmlCache.startScript = startScript;
 
       // All what we need to do for now is add the script tag
       amdScripts += '<script src="' + fingerprintBaseUrl + startFileName + '"></script>';
@@ -326,10 +314,7 @@ module.exports = {
     // Rewrite the index file
     fs.writeFileSync(indexPath, html);
 
-    // Save the index we built for futire comparaison
-    config.indexHtml.amd = html;
-
-    return config.indexHtml;
+    return config.indexHtmlCache;
   },
 
   buildModuleInfos: function () {
