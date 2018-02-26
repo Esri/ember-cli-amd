@@ -151,7 +151,7 @@ module.exports = {
       // - start of the app: load the amd modules used by the app and boorstrap the app
 
       // Handle the amd config
-      var amdConfigScript = this.app.options.amd.configScript;
+      var amdConfigScript;
       if (this.app.options.amd.configPath) {
 
         // Read the amd config
@@ -278,6 +278,8 @@ module.exports = {
       } else {
         amdScripts += '<script src="' + fingerprintBaseUrl + config.amdConfigScript + '"></script>';
       }
+    } else if (this.app.options.amd.configScript){
+      amdScripts += '<script>' + this.app.options.amd.configScript + '</script>';      
     }
 
     // Add the loader
