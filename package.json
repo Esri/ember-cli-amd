@@ -14,7 +14,7 @@
   },
   "repository": "Esri/ember-cli-amd",
   "author": "Rene Rubalcava, Jack Rowlingson, Fred Aubry",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "broccoli-filter": "^1.2.4",
     "cheerio": "^1.0.0-rc.2",
