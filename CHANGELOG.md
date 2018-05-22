@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.1]
+- Support for tests and ember-cli-code-coverage
+
 ## [1.2.0]
 - Update License from MIT to Apache-2.0
 

@@ -242,21 +242,35 @@ module.exports = {
       return config.indexHtmlCache;
     }
 
-    // Get the collection of scripts that have a 'src'
+    // Get the collection of scripts
+    // Scripts that have a 'src' will be loaded by AMD
+    // Scripts that have a body will be assembled into a post loading file and loaded at the end of the AMD loading process
     var scriptElements = cheerioQuery('body > script');
-    var scripts = [];
-    var scriptsWithSrc = scriptElements.filter(function () {
-      return cheerioQuery(this).attr('src') !== undefined;
+    var scriptsToLoad = [];
+    var scriptsToPostExecute = [];
+    scriptElements.each(function () {
+      if (cheerioQuery(this).attr('src')) {
+        scriptsToLoad.push(`"${cheerioQuery(this).attr('src')}"`)
+      } else {
+        scriptsToPostExecute.push(cheerioQuery(this).html());
+      }
     });
-    scriptsWithSrc.each(function () {
-      scripts.push(`"${cheerioQuery(this).attr('src')}"`);
-    });
+
+    // Remove the script tags
+    scriptElements.remove();
+
+    // If we have scripts that have to be executed after the AMD load, then serialize them into a file
+    // afterLoading.js and add this file to the list of AMD modules.
+    if (scriptsToPostExecute.length > 0) {
+      var afterLoadingScript = scriptsToPostExecute.join('\n\n');
+      fs.writeFileSync(path.join(config.directory, 'afterLoading.js'), beautify_js(afterLoadingScript, {
+        indent_size: 2
+      }));
+      scriptsToLoad.push('"/afterLoading.js"');
+    }
 
     // We have to rebuild this index file.
     config.indexHtmlCache.modulesAsString = config.moduleInfos.names;
-
-    // Remove the script tags
-    scriptsWithSrc.remove();
 
     // Add the amd config
     var amdScripts = '';
@@ -279,7 +293,7 @@ module.exports = {
 
     // Add the start scripts
     var startScript = startTemplate(_.assign(config.moduleInfos, {
-      scripts: scripts.join(',')
+      scripts: scriptsToLoad.join(',')
     }));
 
     if (this.app.options.amd.inline) {

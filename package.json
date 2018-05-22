@@ -1,6 +1,6 @@
 {
   "name": "ember-cli-amd",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Ember CLI Addon that can load AMD modules.",
   "directories": {
     "doc": "doc",
@@ -13,7 +13,7 @@
     "test": "ember try:each"
   },
   "repository": "Esri/ember-cli-amd",
-  "author": "Rene Rubalcava, Jack Rowlingson, Fred Aubry",
+  "author": "Rene Rubalcava, Fred Aubry",
   "license": "Apache-2.0",
   "dependencies": {
     "broccoli-filter": "^1.2.4",
