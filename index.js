@@ -47,7 +47,7 @@ var indexHtmlCache = {
 };
 
 // Template used to manufacture the start script
-var startTemplate = _.template(fs.readFileSync(path.join(__dirname, 'start-template.txt'), 'utf8'));
+const startTemplate = _.template(fs.readFileSync(path.join(__dirname, 'start-template.txt'), 'utf8'));
 
 // Identifiers and Literals to replace in the code to avoid conflict with amd loader
 const identifiers = {
@@ -135,7 +135,7 @@ module.exports = {
     // the amd builder will build the amd into a single file using requirejs build if requested.
     // If using a cdn for the amd library, this function is no-op. When the build is finished, we can update the
     // index files.
-    return this.amdBuilder(result.directory, moduleInfos).then(function () {
+    return this.amdBuilder(result.directory, moduleInfos).then(() => {
 
       // There are two index files to deal with, the app index file and the test index file.
       // We need to convert them from ember style to amd style.
@@ -216,7 +216,7 @@ module.exports = {
         }));
       }
 
-    }.bind(this));
+    });
   },
 
   indexBuilder: function (config) {
@@ -262,7 +262,7 @@ module.exports = {
     // If we have scripts that have to be executed after the AMD load, then serialize them into a file
     // afterLoading.js and add this file to the list of AMD modules.
     if (scriptsToPostExecute.length > 0) {
-      var afterLoadingScript = scriptsToPostExecute.join('\n\n');
+      var afterLoadingScript = replaceRequireAndDefine(scriptsToPostExecute.join('\n\n'));
       fs.writeFileSync(path.join(config.directory, 'afterLoading.js'), beautify_js(afterLoadingScript, {
         indent_size: 2
       }));
@@ -427,7 +427,18 @@ RequireFilter.prototype.extensions = ['js'];
 RequireFilter.prototype.targetExtension = 'js';
 
 RequireFilter.prototype.processString = function (code) {
+  return replaceRequireAndDefine(code, this.amdPackages, this.amdModules);
+};
 
+function write(arr, str, offset) {
+  for (var i = 0, l = str.length; i < l; i++) {
+    arr[offset + i] = str[i];
+  }
+}
+
+// Use Esprima to parse the code and eswalk to walk thru the code
+// Replace require and define by non-conflicting verbs
+function replaceRequireAndDefine(code, amdPackages, amdModules) {
   // Parse the code as an AST
   const ast = esprima.parseScript(code, {
     range: true
@@ -435,8 +446,6 @@ RequireFilter.prototype.processString = function (code) {
 
   // Split the code into an array for easier substitutions
   const buffer = code.split('');
-  const amdPackages = this.amdPackages;
-  const amdModules = this.amdModules;
 
   // Walk thru the tree, find and replace our targets
   eswalk(ast, function (node) {
@@ -446,6 +455,11 @@ RequireFilter.prototype.processString = function (code) {
 
     switch (node.type) {
       case 'CallExpression':
+
+        if (!amdPackages || !amdModules){
+          // If not provided then we don't need to track them
+          break;
+        }
 
         // Collect the AMD modules
         // Looking for something like define(<name>, [<module1>, <module2>, ...], <function>)
@@ -515,10 +529,4 @@ RequireFilter.prototype.processString = function (code) {
 
   // Return the new code
   return buffer.join('');
-};
-
-function write(arr, str, offset) {
-  for (var i = 0, l = str.length; i < l; i++) {
-    arr[offset + i] = str[i];
-  }
 }
