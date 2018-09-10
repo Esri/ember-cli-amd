@@ -20,8 +20,10 @@ This addon will:
 * `git clone` this repository
 * `npm install`
 
-## Usage
+## Known Issues
+'ember-cli-amd' doesn't work with 'ember-auto-import'. 'ember-auto-import' is using webpack, it leads to all sorts of issues with how we update the index.html. 
 
+## Usage
 Install to your ember-cli application
 
 * `ember install ember-cli-amd`
