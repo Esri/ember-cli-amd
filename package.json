@@ -1,6 +1,6 @@
 {
   "name": "ember-cli-amd",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Ember CLI Addon that can load AMD modules.",
   "directories": {
     "doc": "doc",
@@ -59,10 +59,6 @@
     "amd"
   ],
   "ember-addon": {
-    "configPath": "tests/dummy/config",
-    "demoURL": "http://esri.github.io/ember-cli-amd/",
-    "paths": [
-      "lib/local-commands"
-    ]
+    "demoURL": "http://esri.github.io/ember-cli-amd/"
   }
 }
