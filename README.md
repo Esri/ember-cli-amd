@@ -21,7 +21,8 @@ This addon will:
 * `npm install`
 
 ## Known Issues
-`ember-cli-amd` doesn't work with `ember-auto-import`. `ember-auto-import` is using webpack, it leads to all sorts of issues with how we update the index.html. 
+
+Version < 1.2.4: `ember-cli-amd` doesn't work with `ember-auto-import`. `ember-auto-import` is using webpack, it leads to all sorts of issues with how we update the index.html. 
 
 ## Usage
 Install to your ember-cli application
@@ -95,7 +96,7 @@ var ENV = {
   }
 ```
 
-## Example using the CDN resources
+## Example using [ArcGIS API for Javascript 4.x](https://developers.arcgis.com/javascript/index.html)
 
 ```javascript
 // ember-cli-build.js
@@ -103,8 +104,7 @@ module.exports = function(defaults) {
 
   var app = new EmberApp(defaults, {
     amd :{
-      loader: 'https://js.arcgis.com/3.15/',
-      configPath: 'config/dojo-config.js',
+      loader: 'https://js.arcgis.com/4.10/',
       packages: [
         'esri','dojo','dojox','dijit',
         'put-selector','xstyle','dbind','dgrid'
@@ -116,12 +116,7 @@ module.exports = function(defaults) {
 };
 ```
 
-```javascript
-// config/dojo-config.js if using dojo
-var dojoConfig = {
-  async: true
-};
-```
+You also need to add to the index.html: `<link rel="stylesheet" href="https://js.arcgis.com/4.10/esri/css/main.css">`
 
 # Using a CDN for your application's assets
 When using `ember-cli-deploy` it is common to deploy the assets of an ember application to a different location (cdn) from the `index.html`. The [ember-cli-deploy](http://ember-cli.com/ember-cli-deploy/docs/v0.5.x/fingerprinting/) documentation discusess how to use fingerprinting to prepend fully-qualified urls to the asset locations. As of v0.4.1 of `ember-cli-amd` these same options are applied to the AMD related scripts that are injected into the page, thus allowing this to work smoothly with `ember-cli-deploy`.
