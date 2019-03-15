@@ -14,12 +14,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const sha = require('sha1');
 const cheerio = require('cheerio');
 const Filter = require('broccoli-filter');
 const esprima = require('esprima');
 const eswalk = require('esprima-walk');
-const requirejs = require('requirejs');
 const _ = require('lodash');
 const beautify_js = require('js-beautify');
 const beautify_html = require('js-beautify').html;
@@ -27,9 +25,6 @@ var SilentError = require('silent-error');
 
 // The root of the project
 let root;
-
-// The finger printing base urls
-var fingerprintBaseUrl = '';
 
 // For contiinuous build, we need to cache a series of properties
 var indexHtmlCache = {
@@ -84,11 +79,6 @@ module.exports = {
     if (!app.options.amd.loader) {
       throw new Error('ember-cli-amd: You must specify a loader option the amd options in ember-cli-build.js.');
     }
-
-    // The finger printing base url
-    if (this.app.options.fingerprint && this.app.options.fingerprint.enabled && this.app.options.fingerprint.prepend) {
-      fingerprintBaseUrl = this.app.options.fingerprint.prepend;
-    }
   },
 
   postprocessTree: function(type, tree) {
@@ -107,6 +97,52 @@ module.exports = {
       amdPackages: this.app.options.amd.packages,
       amdModules: this.amdModules,
       excludePaths: this.app.options.amd.excludePaths
+    });
+  },
+
+  postBuild: function(result) {
+
+    if (!this.app.options.amd) {
+      return;
+    }
+
+    // When ember build --watch or ember serve are used, this function will be called over and over
+    // as a user updates code. We need to figure what we have to build or copy.
+
+    // Get the modules information
+    const moduleInfos = this.buildModuleInfos();
+
+    // There are two index files to deal with, the app index file and the test index file.
+    // We need to convert them from ember style to amd style.
+    // Amd style is made of 3 steps:
+    // - amd configuration (optional), controlled by the his.app.options.amd.configPath
+    // - loader: could be based on local build or from cdn
+    // - start of the app: load the amd modules used by the app and boorstrap the app
+
+    // Handle the amd config
+    var amdConfigScript;
+    if (this.app.options.amd.configPath) {
+      amdConfigScript = fs.readFileSync(path.join(root, this.app.options.amd.configPath), 'utf8');
+    }
+
+    // Rebuild the app index files
+    this.indexBuilder({
+      directory: result.directory,
+      indexFile: this.app.options.outputPaths.app.html,
+      indexHtmlCache: indexHtmlCache.app,
+      amdConfigScript,
+      startSrc: 'amd-start',
+      moduleInfos
+    });
+
+    // Rebuild the test index file
+    this.indexBuilder({
+      directory: result.directory,
+      indexFile: 'tests/index.html',
+      indexHtmlCache: indexHtmlCache.test,
+      amdConfigScript,
+      startSrc: 'amd-test-start',
+      moduleInfos
     });
   },
 
@@ -180,26 +216,8 @@ module.exports = {
       scripts: scriptsToLoad.join(',')
     }));
 
-    if (this.app.options.amd.inline) {
-      // Inline the start script
-      amdScripts += '<script>' + startScript + '</script>';
-    } else {
-      // fingerprint the start script if necessary
-      var startFileName = 'assets/' + config.startSrc;
-      if (this.app.options.fingerprint && this.app.options.fingerprint.enabled) {
-        var startSha = sha(startScript);
-        startFileName += '-' + startSha;
-      }
-      startFileName += '.js';
-
-      // Save the file name and the script. We will save the file later.
-      // The start script file needs to be saved each time the app is rebuilt in continuous build
-      config.indexHtmlCache.startFileName = startFileName;
-      config.indexHtmlCache.startScript = startScript;
-
-      // All what we need to do for now is add the script tag
-      amdScripts += '<script src="' + fingerprintBaseUrl + startFileName + '"></script>';
-    }
+    // Inline the start script
+    amdScripts += '<script>' + startScript + '</script>';
 
     // Add the scripts to the body
     cheerioQuery('body').prepend(amdScripts);
@@ -277,7 +295,7 @@ RequireFilter.prototype.getDestFilePath = function(relativePath) {
   }
   return relativePath;
 }
-RequireFilter.prototype.processString = function(code, relativePath) {
+RequireFilter.prototype.processString = function(code) {
   return replaceRequireAndDefine(code, this.amdPackages, this.amdModules);
 };
 
