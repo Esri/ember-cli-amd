@@ -66,7 +66,7 @@ module.exports = {
 
   amdModules: new Set(),
 
-  included: function (app) {
+  included: function(app) {
     // Note: this functionis only called once even if using ember build --watch or ember serve
 
     // This is the entry point for this addon. We will collect the amd definitions from the ember-cli-build.js and
@@ -79,21 +79,11 @@ module.exports = {
     }
 
     // Merge the default options
-    app.options.amd = _.merge({
-      loader: 'requirejs',
-      packages: [],
-      outputDependencyList: false,
-      buildOutput: 'assets/built.js',
-      inline: true
-    }, app.options.amd);
+    app.options.amd = _.merge({ packages: [], excludePaths: [] }, app.options.amd);
 
-    // Determine the type of loader. We only support requirejs, dojo, or the path to a cdn
+    // Determine the type of loader.
     if (!app.options.amd.loader) {
       throw new Error('ember-cli-amd: You must specify a loader option the amd options in ember-cli-build.js.');
-    }
-
-    if ((app.options.amd.loader === 'requirejs' || app.options.amd.loader === 'dojo') && !app.options.amd.libraryPath) {
-      throw new Error('ember-cli-amd: When using a local loader, you must specify its location with the amdBase property in the amd options in ember-cli-build.js.');
     }
 
     // The finger printing base url
@@ -102,7 +92,7 @@ module.exports = {
     }
   },
 
-  postprocessTree: function (type, tree) {
+  postprocessTree: function(type, tree) {
     // Note: this function will be called once during the continuous builds. However, the tree returned will be directly manipulated.
     // It means that the de-requireing will be going on.
     if (!this.app.options.amd) {
@@ -116,110 +106,12 @@ module.exports = {
     // Use the RequireFilter class to replace in the code that conflict with AMD loader
     return new RequireFilter(tree, {
       amdPackages: this.app.options.amd.packages,
-      amdModules: this.amdModules
+      amdModules: this.amdModules,
+      excludePaths: this.app.options.amd.excludePaths
     });
   },
 
-  postBuild: function (result) {
-
-    if (!this.app.options.amd) {
-      return;
-    }
-
-    // When ember build --watch or ember serve are used, this function will be called over and over
-    // as a user updates code. We need to figure what we have to build or copy.
-
-    // Get the modules information
-    const moduleInfos = this.buildModuleInfos();
-
-    // the amd builder will build the amd into a single file using requirejs build if requested.
-    // If using a cdn for the amd library, this function is no-op. When the build is finished, we can update the
-    // index files.
-    return this.amdBuilder(result.directory, moduleInfos).then(() => {
-
-      // There are two index files to deal with, the app index file and the test index file.
-      // We need to convert them from ember style to amd style.
-      // Amd style is made of 3 steps:
-      // - amd configuration (optional), controlled by the his.app.options.amd.configPath
-      // - loader: could be based on local build or from cdn
-      // - start of the app: load the amd modules used by the app and boorstrap the app
-
-      // Handle the amd config
-      var amdConfigScript;
-      if (this.app.options.amd.configPath) {
-
-        // Read the amd config
-        amdConfigScript = fs.readFileSync(path.join(root, this.app.options.amd.configPath), 'utf8');
-
-        // If the config has to be inlined in the index then we have nothing to do at this point.
-        // If the config doesn't have to be inlined then we need to copy the file and eventually fingerprint it.
-        // Note that when the config is not inlined the property amdConfig is the file name. If the config
-        // has to be inlined, the property amdConfig is the actual config to inline.
-        if (!this.app.options.amd.inline) {
-
-          // Only fingerprint if fingerprinting is enabled
-          var amdConfigFileName = 'assets/amd-config';
-          if (this.app.options.fingerprint && this.app.options.fingerprint.enabled) {
-            var amdConfigSha = sha(amdConfigScript);
-            amdConfigFileName += '-' + amdConfigSha;
-          }
-          amdConfigFileName += '.js';
-
-          // Copy the amd config into the output directory
-          fs.writeFileSync(path.join(result.directory, amdConfigFileName), amdConfigScript);
-
-          // The amdConfig will be the file path
-          amdConfigScript = amdConfigFileName;
-        }
-      }
-
-      // If requested, save the list of modules used
-      if (this.app.options.amd.outputDependencyList) {
-        fs.writeFileSync(path.join(result.directory, 'dependencies.txt'), moduleInfos.names);
-      }
-
-      // Rebuild the app index files
-      var appIndexBuildResult = this.indexBuilder({
-        directory: result.directory,
-        indexFile: this.app.options.outputPaths.app.html,
-        indexHtmlCache: indexHtmlCache.app,
-        amdConfigScript,
-        startSrc: 'amd-start',
-        moduleInfos
-      });
-
-      // If we are not inlining, then we need to save the start script
-      if (!this.app.options.amd.inline) {
-        fs.writeFileSync(path.join(result.directory, appIndexBuildResult.startFileName), beautify_js(appIndexBuildResult.startScript, {
-          indent_size: 2
-        }));
-      }
-
-      // Rebuild the test index file
-      var testIndexBuildResult = this.indexBuilder({
-        directory: result.directory,
-        indexFile: 'tests/index.html',
-        indexHtmlCache: indexHtmlCache.test,
-        amdConfigScript,
-        startSrc: 'amd-test-start',
-        moduleInfos
-      });
-
-      if (!testIndexBuildResult) {
-        return;
-      }
-
-      // If we are not inlining, then we need to save the start script
-      if (!this.app.options.amd.inline) {
-        fs.writeFileSync(path.join(result.directory, testIndexBuildResult.startFileName), beautify_js(testIndexBuildResult.startScript, {
-          indent_size: 2
-        }));
-      }
-
-    });
-  },
-
-  indexBuilder: function (config) {
+  indexBuilder: function(config) {
     // If the current index html is not the same as teh one we built, it means
     // that another extension must have forced to regenerate the index html or
     // this is the first time this extension is running
@@ -248,7 +140,7 @@ module.exports = {
     var scriptElements = cheerioQuery('body > script');
     var scriptsToLoad = [];
     var scriptsToPostExecute = [];
-    scriptElements.each(function () {
+    scriptElements.each(function() {
       if (cheerioQuery(this).attr('src')) {
         scriptsToLoad.push(`"${cheerioQuery(this).attr('src')}"`)
       } else {
@@ -275,20 +167,13 @@ module.exports = {
     // Add the amd config
     var amdScripts = '';
     if (this.app.options.amd.configPath) {
-      if (this.app.options.amd.inline) {
-        amdScripts += '<script>' + config.amdConfigScript + '</script>';
-      } else {
-        amdScripts += '<script src="' + fingerprintBaseUrl + config.amdConfigScript + '"></script>';
-      }
+      amdScripts += '<script>' + config.amdConfigScript + '</script>';
     } else if (this.app.options.amd.configScript) {
       amdScripts += '<script>' + this.app.options.amd.configScript + '</script>';
     }
 
     // Add the loader
     var loaderSrc = this.app.options.amd.loader;
-    if (loaderSrc === 'requirejs' || loaderSrc === 'dojo') {
-      loaderSrc = config.baseUrl + 'assets/built.js';
-    }
     amdScripts += `<script src="${loaderSrc}" data-amd="true"></script>`;
 
     // Add the start scripts
@@ -331,14 +216,14 @@ module.exports = {
     return config.indexHtmlCache;
   },
 
-  buildModuleInfos: function () {
+  buildModuleInfos: function() {
 
     // Build different arrays representing the modules for the injection in the start script
     const objs = [];
     const names = [];
     const adoptables = [];
     let index = 0;
-    this.amdModules.forEach(function (amdModule) {
+    this.amdModules.forEach(function(amdModule) {
       objs.push(`mod${index}`);
       names.push(`'${amdModule}'`);
       adoptables.push(`{name:'${amdModule}',obj:mod${index}}`);
@@ -351,52 +236,6 @@ module.exports = {
       adoptables: adoptables.join(','),
       vendor: path.parse(this.app.options.outputPaths.vendor.js).name
     };
-  },
-
-  amdBuilder: function (directory, moduleInfos) {
-
-    // This is an asynchronous execution. We will use RSVP to be compliant with ember-cli
-    const deferred = RSVP.defer();
-
-    // If we are using the cdn then we don't need to build
-    if (this.app.options.amd.loader !== 'dojo' && this.app.options.amd.loader !== 'requirejs') {
-      deferred.resolve();
-      return deferred.promise;
-    }
-
-    // For dojo we need to add the dojo module in the list of modules for the build
-    let modulesAsString = moduleInfos.names.join(',');
-    if (this.app.options.amd.loader === 'dojo') {
-      modulesAsString = `'dojo/dojo',${modulesAsString}`;
-    }
-
-    // Create the built loader file
-    var boot = 'define([' + modulesAsString + '])';
-    fs.writeFileSync(path.join(this.app.options.amd.libraryPath, 'main.js'), boot);
-
-    // Define the build config
-    var buildConfig = {
-      baseUrl: this.app.options.amd.libraryPath,
-      name: 'main',
-      out: path.join(directory, 'assets/built.js'),
-      optimize: 'none',
-      inlineText: false,
-      include: []
-    };
-
-    // For require js, we need to include the require module in the build via include
-    if (this.app.options.amd.loader === 'requirejs') {
-      buildConfig.include = ['../requirejs/require'];
-    }
-
-    // Merge the user build config and the default build config and build
-    requirejs.optimize(_.merge(this.app.options.amd.buildConfig, buildConfig), function () {
-      deferred.resolve();
-    }, function (err) {
-      deferred.reject(err);
-    });
-
-    return deferred.promise;
   }
 };
 
@@ -418,6 +257,7 @@ function RequireFilter(inputTree, options) {
   this.description = options.description;
   this.amdPackages = options.amdPackages || [];
   this.amdModules = options.amdModules;
+  this.excludePaths = options.excludePaths;
 }
 
 RequireFilter.prototype = Object.create(Filter.prototype);
@@ -426,7 +266,19 @@ RequireFilter.prototype.constructor = RequireFilter;
 RequireFilter.prototype.extensions = ['js'];
 RequireFilter.prototype.targetExtension = 'js';
 
-RequireFilter.prototype.processString = function (code) {
+RequireFilter.prototype.getDestFilePath = function(relativePath) {
+  relativePath = Filter.prototype.getDestFilePath.call(this, relativePath);
+  if (!relativePath) {
+    return relativePath;
+  }
+  for (var i = 0, len = this.excludePaths.length; i < len; i++) {
+    if (relativePath.indexOf(this.excludePaths[i]) === 0) {
+      return null;
+    }
+  }
+  return relativePath;
+}
+RequireFilter.prototype.processString = function(code, relativePath) {
   return replaceRequireAndDefine(code, this.amdPackages, this.amdModules);
 };
 
@@ -448,7 +300,7 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
   const buffer = code.split('');
 
   // Walk thru the tree, find and replace our targets
-  eswalk(ast, function (node) {
+  eswalk(ast, function(node) {
     if (!node) {
       return;
     }
@@ -456,7 +308,7 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
     switch (node.type) {
       case 'CallExpression':
 
-        if (!amdPackages || !amdModules){
+        if (!amdPackages || !amdModules) {
           // If not provided then we don't need to track them
           break;
         }
@@ -464,33 +316,44 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
         // Collect the AMD modules
         // Looking for something like define(<name>, [<module1>, <module2>, ...], <function>)
         // This is the way ember defines a module
-        if (node.callee.name !== 'define') {
-          return;
-        }
+        if (node.callee.name === 'define') {
 
-        if (node.arguments.length < 2 || node.arguments[1].type !== 'ArrayExpression' || !node.arguments[1].elements) {
-          return;
-        }
-
-        node.arguments[1].elements.forEach(function (element) {
-          if (element.type !== 'Literal') {
+          if (node.arguments.length < 2 || node.arguments[1].type !== 'ArrayExpression' || !node.arguments[1].elements) {
             return;
           }
 
-          const isAMD = amdPackages.some(function (amdPackage) {
-            if (typeof element.value !== 'string') {
-              return false;
+          node.arguments[1].elements.forEach(function(element) {
+            if (element.type !== 'Literal') {
+              return;
             }
-            return element.value.indexOf(amdPackage + '/') === 0 || element.value === amdPackage;
+
+            const isAMD = amdPackages.some(function(amdPackage) {
+              if (typeof element.value !== 'string') {
+                return false;
+              }
+              return element.value.indexOf(amdPackage + '/') === 0 || element.value === amdPackage;
+            });
+
+            if (!isAMD) {
+              return;
+            }
+
+            amdModules.add(element.value);
+
           });
 
-          if (!isAMD) {
-            return;
+          return;
+        }
+
+        // Dealing with ember-auto-import eval
+        if (node.callee.name === 'eval') {
+          const evalCode = node.arguments[0].value;
+          const evalCodeAfter = replaceRequireAndDefine(evalCode, amdPackages, amdModules);
+          if (evalCode !== evalCodeAfter) {
+            write(buffer, "eval(\"" + evalCodeAfter.replace(/\n/g, "\\n") + "\");", node.range[0]);
           }
+        }
 
-          amdModules.add(element.value);
-
-        });
         return;
 
       case 'Identifier':
