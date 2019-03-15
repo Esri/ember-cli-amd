@@ -84,18 +84,15 @@ When using `ember-cli-deploy` it is common to deploy the assets of an ember appl
 * `ember server`
 * Visit your app at http://localhost:4200.
 
-## Running Tests
+### Running tests
 
 * `ember test`
 * `ember test --server`
 
-## Building
+### Running the dummy application
 
-* `ember build`
-
-## Requirements
-* Up to version 0.4.9 Ember CLI 1.13.0 or greater.
-* Starting at version 1.0.0 Ember CLI 2.18.0 or greater.
+* `ember serve`
+* Visit the dummy application at [http://localhost:4200](http://localhost:4200).
 
 ## Resources
 * For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).

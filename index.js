@@ -23,7 +23,6 @@ const requirejs = require('requirejs');
 const _ = require('lodash');
 const beautify_js = require('js-beautify');
 const beautify_html = require('js-beautify').html;
-const RSVP = require('rsvp');
 var SilentError = require('silent-error');
 
 // The root of the project
