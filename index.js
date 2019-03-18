@@ -299,9 +299,10 @@ RequireFilter.prototype.processString = function(code) {
   return replaceRequireAndDefine(code, this.amdPackages, this.amdModules);
 };
 
-function write(arr, str, offset) {
-  for (var i = 0, l = str.length; i < l; i++) {
-    arr[offset + i] = str[i];
+function write(arr, str, offset, len) {
+  arr[offset] = str;
+  for (let i = 1; i < len; i++) {
+    arr[offset + i] = undefined;
   }
 }
 
@@ -367,7 +368,9 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
           const evalCode = node.arguments[0].value;
           const evalCodeAfter = replaceRequireAndDefine(evalCode, amdPackages, amdModules);
           if (evalCode !== evalCodeAfter) {
-            write(buffer, "eval(\"" + evalCodeAfter.replace(/\n/g, "\\n") + "\");", node.range[0]);
+            const newEvalCode = "eval(" + JSON.stringify(evalCodeAfterDoubleQuoteReplace) + ");";
+            const len = node.range[1] - node.range[0];
+            write(buffer, newEvalCode, node.range[0], len);
           }
         }
 
@@ -385,7 +388,7 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
             return;
           }
 
-          write(buffer, identifier, node.range[0]);
+          write(buffer, identifier, node.range[0], node.range[1] - node.range[0]);
         }
         return;
 
@@ -401,7 +404,7 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
             return;
           }
 
-          write(buffer, literal, node.range[0]);
+          write(buffer, literal, node.range[0], node.range[1] - node.range[0]);
         }
         return;
     }
