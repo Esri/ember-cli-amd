@@ -368,9 +368,7 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
           const evalCode = node.arguments[0].value;
           const evalCodeAfter = replaceRequireAndDefine(evalCode, amdPackages, amdModules);
           if (evalCode !== evalCodeAfter) {
-            const newEvalCode = "eval(" + JSON.stringify(evalCodeAfterDoubleQuoteReplace) + ");";
-            const len = node.range[1] - node.range[0];
-            write(buffer, newEvalCode, node.range[0], len);
+            write(buffer, "eval(" + JSON.stringify(evalCodeAfter) + ");", node.range[0], node.range[1] - node.range[0]);
           }
         }
 
