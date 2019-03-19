@@ -299,9 +299,19 @@ RequireFilter.prototype.processString = function(code) {
   return replaceRequireAndDefine(code, this.amdPackages, this.amdModules);
 };
 
-function write(arr, str, offset) {
-  for (var i = 0, l = str.length; i < l; i++) {
-    arr[offset + i] = str[i];
+// Write the new string into the range provided without modifying the size of arr.
+// If the size of arr changes, then ranges from the parsed code would be invalidated.
+// Since str.length can be shorter or longer than the range it is overwriting,
+// write str into the first position of the range and then fill the remainder of the
+// range with undefined.
+// 
+// We know that a range will only be written to once.
+// And since the array is used for positioning and then joined, this method of overwriting works.
+function write(arr, str, range) {
+  const offset = range[0];
+  arr[offset] = str;
+  for (let i = offset + 1; i < range[1]; i++) {
+    arr[i] = undefined;
   }
 }
 
@@ -363,11 +373,11 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
         }
 
         // Dealing with ember-auto-import eval
-        if (node.callee.name === 'eval') {
+        if (node.callee.name === 'eval' && node.arguments[0].type === 'Literal' && typeof node.arguments[0].value === 'string') {
           const evalCode = node.arguments[0].value;
           const evalCodeAfter = replaceRequireAndDefine(evalCode, amdPackages, amdModules);
           if (evalCode !== evalCodeAfter) {
-            write(buffer, "eval(\"" + evalCodeAfter.replace(/\n/g, "\\n") + "\");", node.range[0]);
+            write(buffer, "eval(" + JSON.stringify(evalCodeAfter) + ");", node.range);
           }
         }
 
@@ -385,7 +395,7 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
             return;
           }
 
-          write(buffer, identifier, node.range[0]);
+          write(buffer, identifier, node.range);
         }
         return;
 
@@ -401,7 +411,7 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
             return;
           }
 
-          write(buffer, literal, node.range[0]);
+          write(buffer, literal, node.range);
         }
         return;
     }
