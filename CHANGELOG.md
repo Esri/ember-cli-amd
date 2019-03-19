@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.0.2]
+- Improved compatibility with ember-auto-import
+    - Fixed issue where not all special characters were getting escaped during webpack eval modification
+    - Fixed issue where build would crash when trying to modify an eval expression without a string literal as the argument (i.e. a variable containing a string being passed to eval)
+
 ## [2.0.0]
 !!!Breaking changes!!
 - Removed unsued functionality
