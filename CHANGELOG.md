@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - Fixed issue where not all special characters were getting escaped during webpack eval modification
     - Fixed issue where build would crash when trying to modify an eval expression without a string literal as the argument (i.e. a variable containing a string being passed to eval)
 
+## [2.0.1]
+- Small bug fix
+
 ## [2.0.0]
 !!!Breaking changes!!
 - Removed unsued functionality
