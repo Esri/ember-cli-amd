@@ -364,7 +364,7 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
         }
 
         // Dealing with ember-auto-import eval
-        if (node.callee.name === 'eval') {
+        if (node.callee.name === 'eval' && node.arguments[0].type === 'Literal' && typeof node.arguments[0].value === 'string') {
           const evalCode = node.arguments[0].value;
           const evalCodeAfter = replaceRequireAndDefine(evalCode, amdPackages, amdModules);
           if (evalCode !== evalCodeAfter) {
