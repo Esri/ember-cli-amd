@@ -299,10 +299,19 @@ RequireFilter.prototype.processString = function(code) {
   return replaceRequireAndDefine(code, this.amdPackages, this.amdModules);
 };
 
-function write(arr, str, offset, len) {
+// Write the new string into the range provided without modifying the size of arr.
+// If the size of arr changes, then ranges from the parsed code would be invalidated.
+// Since str.length can be shorter or longer than the range it is overwriting,
+// write str into the first position of the range and then fill the remainder of the
+// range with undefined.
+// 
+// We know that a range will only be written to once.
+// And since the array is used for positioning and then joined, this method of overwriting works.
+function write(arr, str, range) {
+  const offset = range[0];
   arr[offset] = str;
-  for (let i = 1; i < len; i++) {
-    arr[offset + i] = undefined;
+  for (let i = offset + 1; i < range[1]; i++) {
+    arr[i] = undefined;
   }
 }
 
@@ -368,7 +377,7 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
           const evalCode = node.arguments[0].value;
           const evalCodeAfter = replaceRequireAndDefine(evalCode, amdPackages, amdModules);
           if (evalCode !== evalCodeAfter) {
-            write(buffer, "eval(" + JSON.stringify(evalCodeAfter) + ");", node.range[0], node.range[1] - node.range[0]);
+            write(buffer, "eval(" + JSON.stringify(evalCodeAfter) + ");", node.range);
           }
         }
 
@@ -386,7 +395,7 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
             return;
           }
 
-          write(buffer, identifier, node.range[0], node.range[1] - node.range[0]);
+          write(buffer, identifier, node.range);
         }
         return;
 
@@ -402,7 +411,7 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
             return;
           }
 
-          write(buffer, literal, node.range[0], node.range[1] - node.range[0]);
+          write(buffer, literal, node.range);
         }
         return;
     }
