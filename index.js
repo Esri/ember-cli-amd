@@ -12,10 +12,12 @@
 /* jshint node: true */
 'use strict';
 
+const broccoli = require('broccoli-source');
 const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
 const Filter = require('broccoli-filter');
+const funnel = require('broccoli-funnel');
 const esprima = require('esprima');
 const eswalk = require('esprima-walk');
 const _ = require('lodash');
@@ -81,6 +83,46 @@ module.exports = {
     }
   },
 
+  treeForPublic: function(tree) {
+    const UnwatchedDir = broccoli.UnwatchedDir;
+    if (!this.app.options.amd.inline && this.app.options.amd.configPath) {
+      const amdConfigScript = funnel(new UnwatchedDir(root), {
+        files: [this.app.options.amd.configPath],
+        getDestinationPath() {
+          return 'assets/amd-config.js';
+        }
+      });
+      return amdConfigScript;
+    }
+  },
+
+  contentFor: function(type) {
+    if (type === 'body') {
+      let amdScripts = '';
+      if (this.app.options.amd.configPath) {
+        if (this.app.options.amd.inline) {
+          var amdConfigScript;
+          if (this.app.options.amd.configPath) {
+            amdConfigScript = fs.readFileSync(path.join(root, this.app.options.amd.configPath), 'utf8');
+          }
+          amdScripts += `<script>${amdConfigScript}</script>`;
+        } else {
+          amdScripts += `<script src="assets/amd-config.js"></script>`
+        }
+      }
+  
+      // Add the loader
+      var loaderSrc = this.app.options.amd.loader;
+      amdScripts += `<script src="${loaderSrc}" data-amd="true"></script>`;
+
+      return amdScripts;
+    }
+
+    if (type === 'post-vendor') {
+
+    }
+  },
+
   postprocessTree: function(type, tree) {
     // Note: this function will be called once during the continuous builds. However, the tree returned will be directly manipulated.
     // It means that the de-requireing will be going on.
@@ -101,7 +143,6 @@ module.exports = {
   },
 
   postBuild: function(result) {
-
     if (!this.app.options.amd) {
       return;
     }
@@ -119,19 +160,10 @@ module.exports = {
     // - loader: could be based on local build or from cdn
     // - start of the app: load the amd modules used by the app and boorstrap the app
 
-    // Handle the amd config
-    var amdConfigScript;
-    if (this.app.options.amd.configPath) {
-      amdConfigScript = fs.readFileSync(path.join(root, this.app.options.amd.configPath), 'utf8');
-    }
-
-    // Rebuild the app index files
     this.indexBuilder({
       directory: result.directory,
       indexFile: this.app.options.outputPaths.app.html,
       indexHtmlCache: indexHtmlCache.app,
-      amdConfigScript,
-      startSrc: 'amd-start',
       moduleInfos
     });
 
@@ -140,8 +172,6 @@ module.exports = {
       directory: result.directory,
       indexFile: 'tests/index.html',
       indexHtmlCache: indexHtmlCache.test,
-      amdConfigScript,
-      startSrc: 'amd-test-start',
       moduleInfos
     });
   },
@@ -201,15 +231,6 @@ module.exports = {
 
     // Add the amd config
     var amdScripts = '';
-    if (this.app.options.amd.configPath) {
-      amdScripts += '<script>' + config.amdConfigScript + '</script>';
-    } else if (this.app.options.amd.configScript) {
-      amdScripts += '<script>' + this.app.options.amd.configScript + '</script>';
-    }
-
-    // Add the loader
-    var loaderSrc = this.app.options.amd.loader;
-    amdScripts += `<script src="${loaderSrc}" data-amd="true"></script>`;
 
     // Add the start scripts
     var startScript = startTemplate(_.assign(config.moduleInfos, {
