@@ -4,6 +4,12 @@ const EmberAddon = require('ember-cli/lib/broccoli/ember-addon');
 
 module.exports = function(defaults) {
   let app = new EmberAddon(defaults, {
+    'ember-cli-babel': {
+      sourceMaps: 'inline'
+    },
+    fingerprint: {
+      enabled: true
+    },
     amd: {
       loader: 'https://js.arcgis.com/3.28/',
       packages: [ // user defined AMD packages to search for in application

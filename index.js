@@ -12,7 +12,8 @@
 /* jshint node: true */
 'use strict';
 
-const broccoli = require('broccoli-source');
+const UnwatchedDir = require('broccoli-source').UnwatchedDir;
+const merge = require('broccoli-merge-trees');
 const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
@@ -75,29 +76,44 @@ module.exports = {
     }
 
     // Merge the default options
-    app.options.amd = _.merge({ packages: [], excludePaths: [] }, app.options.amd);
+    app.options.amd = _.merge({
+      packages: [],
+      excludePaths: [],
+      inline: true
+    }, app.options.amd);
 
     // Determine the type of loader.
     if (!app.options.amd.loader) {
       throw new Error('ember-cli-amd: You must specify a loader option the amd options in ember-cli-build.js.');
     }
+
+    if (app.options.amd.configPath) {
+      const configPath = app.options.amd.configPath;
+      if (!fs.existsSync(path.join(root, configPath))) {
+        throw new Error(`ember-cli-amd: The file specified in the config path option "${configPath}" does not exist`);
+      }
+    }
   },
 
-  treeForPublic: function(tree) {
-    const UnwatchedDir = broccoli.UnwatchedDir;
-    if (!this.app.options.amd.inline && this.app.options.amd.configPath) {
-      const amdConfigScript = funnel(new UnwatchedDir(root), {
-        files: [this.app.options.amd.configPath],
+  treeForPublic: function() {
+    if (this.app.options.amd.configPath && !this.app.options.amd.inline) {
+      const configPath = this.app.options.amd.configPath;
+      let configPathDir = path.join(root, path.dirname(configPath));
+      
+      const destConfigFile = '/assets/amd-config.js'
+      const amdConfig = funnel(new UnwatchedDir(configPathDir), {
+        files: [path.basename(configPath)],
         getDestinationPath() {
-          return 'assets/amd-config.js';
+          return destConfigFile;
         }
       });
-      return amdConfigScript;
+      return amdConfig;
     }
   },
 
   contentFor: function(type) {
-    if (type === 'body') {
+    if (type === 'head-footer') {
+      // Add the amd-config script
       let amdScripts = '';
       if (this.app.options.amd.configPath) {
         if (this.app.options.amd.inline) {
@@ -107,7 +123,7 @@ module.exports = {
           }
           amdScripts += `<script>${amdConfigScript}</script>`;
         } else {
-          amdScripts += `<script src="assets/amd-config.js"></script>`
+          amdScripts += `<script src="/assets/amd-config.js"></script>`
         }
       }
   
@@ -119,13 +135,11 @@ module.exports = {
     }
 
     if (type === 'post-vendor') {
-
+        return '<script src="/assets/load-amd-modules.js"></script>';
     }
   },
 
   postprocessTree: function(type, tree) {
-    // Note: this function will be called once during the continuous builds. However, the tree returned will be directly manipulated.
-    // It means that the de-requireing will be going on.
     if (!this.app.options.amd) {
       return tree;
     }
@@ -134,12 +148,27 @@ module.exports = {
       return tree;
     }
 
-    // Use the RequireFilter class to replace in the code that conflict with AMD loader
-    return new RequireFilter(tree, {
+    // Use the ReplaceRequireAndDefineFilter class to replace in the code that conflict with AMD loader
+    const postProcessTrees = [new ReplaceRequireAndDefineFilter(tree, {
       amdPackages: this.app.options.amd.packages,
       amdModules: this.amdModules,
       excludePaths: this.app.options.amd.excludePaths
-    });
+    })];
+    if (!this.app.options.amd.inline) {
+      postProcessTrees.push(new LoadAmdModuleFileWriterFilter(
+        funnel(new UnwatchedDir(root), {
+          files: ['start-template.txt']
+        }), {
+          amdModules: this.amdModules
+        }
+      ));
+    }
+    return merge(postProcessTrees);
+  },
+
+  preBuild: function() {
+    // Clear AMD Modules so that any changes can be captured
+    this.amdModules.clear();
   },
 
   postBuild: function(result) {
@@ -151,12 +180,12 @@ module.exports = {
     // as a user updates code. We need to figure what we have to build or copy.
 
     // Get the modules information
-    const moduleInfos = this.buildModuleInfos();
+    const moduleInfos = buildModuleInfos(this.amdModules);
 
     // There are two index files to deal with, the app index file and the test index file.
     // We need to convert them from ember style to amd style.
     // Amd style is made of 3 steps:
-    // - amd configuration (optional), controlled by the his.app.options.amd.configPath
+    // - amd configuration (optional), controlled by the this.app.options.amd.configPath
     // - loader: could be based on local build or from cdn
     // - start of the app: load the amd modules used by the app and boorstrap the app
 
@@ -177,12 +206,9 @@ module.exports = {
   },
 
   indexBuilder: function(config) {
-    // If the current index html is not the same as teh one we built, it means
-    // that another extension must have forced to regenerate the index html or
-    // this is the first time this extension is running
-    var indexPath = path.join(config.directory, config.indexFile);
+    const indexPath = path.join(config.directory, config.indexFile);
 
-    var indexHtml;
+    let indexHtml;
     try {
       indexHtml = fs.readFileSync(indexPath, 'utf8');
     } catch (e) {
@@ -190,58 +216,49 @@ module.exports = {
       return null;
     }
 
-    // Check if we have to continue
-    // - If the index already contains the AMD loader
-    // - if the list of modules is still the same
     const cheerioQuery = cheerio.load(indexHtml);
-    const amdScriptElements = cheerioQuery('script[data-amd]')
-    if (amdScriptElements.length === 1 && config.indexHtmlCache.modulesAsString === config.moduleInfos.names) {
-      return config.indexHtmlCache;
-    }
 
-    // Get the collection of scripts
-    // Scripts that have a 'src' will be loaded by AMD
-    // Scripts that have a body will be assembled into a post loading file and loaded at the end of the AMD loading process
-    var scriptElements = cheerioQuery('body > script');
-    var scriptsToLoad = [];
-    var scriptsToPostExecute = [];
-    scriptElements.each(function() {
-      if (cheerioQuery(this).attr('src')) {
-        scriptsToLoad.push(`"${cheerioQuery(this).attr('src')}"`)
-      } else {
-        scriptsToPostExecute.push(cheerioQuery(this).html());
+    // Add the script that will be responsible for loading the amd-modules, added in {{content-for "post-vendor"}}
+    const loadModulesScriptElement = cheerioQuery('script[src^="/assets/load-amd-modules"]');
+  
+    if (config.moduleInfos.names.trim() !== '') {
+      // Create the script contents that will load the scripts
+      const loadModulesScriptContent = startTemplate(config.moduleInfos);
+
+      if (this.app.options.amd.inline) {
+        // If writing inline, display 
+        loadModulesScriptElement.html(loadModulesScriptContent);
+        loadModulesScriptElement.attr('src', null);
       }
-    });
-
-    // Remove the script tags
-    scriptElements.remove();
-
-    // If we have scripts that have to be executed after the AMD load, then serialize them into a file
-    // afterLoading.js and add this file to the list of AMD modules.
-    if (scriptsToPostExecute.length > 0) {
-      var afterLoadingScript = replaceRequireAndDefine(scriptsToPostExecute.join('\n\n'));
-      fs.writeFileSync(path.join(config.directory, 'afterLoading.js'), beautify_js(afterLoadingScript, {
-        indent_size: 2
-      }));
-      scriptsToLoad.push('"/afterLoading.js"');
+    } else {
+      // No modules to load, so remove the script tag
+      loadModulesScriptElement.remove();
     }
+
+    //TODO: Rewrite any inline scripts with require or define
+
+    // var scriptElements = cheerioQuery('script[src="assets/load-amd-modules.js"]');
+    // var scriptsToLoad = [];
+    // var scriptsToPostExecute = [];
+    // scriptElements.each(function() {
+    //   if (cheerioQuery(this).attr('src')) {
+    //   } else {
+    //     scriptsToPostExecute.push(cheerioQuery(this).html());
+    //   }
+    // });
+
+    // // If we have scripts that have to be executed after the AMD load, then serialize them into a file
+    // // afterLoading.js and add this file to the list of AMD modules.
+    // if (scriptsToPostExecute.length > 0) {
+    //   var afterLoadingScript = replaceRequireAndDefine(scriptsToPostExecute.join('\n\n'));
+    //   fs.writeFileSync(path.join(config.directory, 'afterLoading.js'), beautify_js(afterLoadingScript, {
+    //     indent_size: 2
+    //   }));
+    //   scriptsToLoad.push('"/afterLoading.js"');
+    // }
 
     // We have to rebuild this index file.
     config.indexHtmlCache.modulesAsString = config.moduleInfos.names;
-
-    // Add the amd config
-    var amdScripts = '';
-
-    // Add the start scripts
-    var startScript = startTemplate(_.assign(config.moduleInfos, {
-      scripts: scriptsToLoad.join(',')
-    }));
-
-    // Inline the start script
-    amdScripts += '<script>' + startScript + '</script>';
-
-    // Add the scripts to the body
-    cheerioQuery('body').prepend(amdScripts);
 
     // Beautify the index.html
     var html = beautify_html(cheerioQuery.html(), {
@@ -252,73 +269,29 @@ module.exports = {
     fs.writeFileSync(indexPath, html);
 
     return config.indexHtmlCache;
-  },
-
-  buildModuleInfos: function() {
-
-    // Build different arrays representing the modules for the injection in the start script
-    const objs = [];
-    const names = [];
-    const adoptables = [];
-    let index = 0;
-    this.amdModules.forEach(function(amdModule) {
-      objs.push(`mod${index}`);
-      names.push(`'${amdModule}'`);
-      adoptables.push(`{name:'${amdModule}',obj:mod${index}}`);
-      index++;
-    });
-
-    return {
-      names: names.join(','),
-      objects: objs.join(','),
-      adoptables: adoptables.join(','),
-      vendor: path.parse(this.app.options.outputPaths.vendor.js).name
-    };
   }
 };
 
-//
-// Class for replacing in the generated code the AMD protected keyword 'require' and 'define'.
-// We are replacing these keywords by non conflicting words.
-// It uses the broccoli filter to go thru the different files (as string).
-function RequireFilter(inputTree, options) {
-  if (!(this instanceof RequireFilter)) {
-    return new RequireFilter(inputTree, options);
-  }
+function buildModuleInfos(modules) {
+  const objs = [];
+  const names = [];
+  const adoptables = [];
 
-  Filter.call(this, inputTree, options); // this._super()
+  let index = 0;
+  modules.forEach(function(amdModule) {
+    objs.push(`mod${index}`);
+    names.push(`'${amdModule}'`);
+    adoptables.push(`{name:'${amdModule}',obj:mod${index}}`);
+    index++;
+  });
 
-  options = options || {};
-
-  this.inputTree = inputTree;
-  this.files = options.files || [];
-  this.description = options.description;
-  this.amdPackages = options.amdPackages || [];
-  this.amdModules = options.amdModules;
-  this.excludePaths = options.excludePaths;
+  return {
+    names: names.join(','),
+    objects: objs.join(','),
+    adoptables: adoptables.join(',')
+  };
 }
 
-RequireFilter.prototype = Object.create(Filter.prototype);
-RequireFilter.prototype.constructor = RequireFilter;
-
-RequireFilter.prototype.extensions = ['js'];
-RequireFilter.prototype.targetExtension = 'js';
-
-RequireFilter.prototype.getDestFilePath = function(relativePath) {
-  relativePath = Filter.prototype.getDestFilePath.call(this, relativePath);
-  if (!relativePath) {
-    return relativePath;
-  }
-  for (var i = 0, len = this.excludePaths.length; i < len; i++) {
-    if (relativePath.indexOf(this.excludePaths[i]) === 0) {
-      return null;
-    }
-  }
-  return relativePath;
-}
-RequireFilter.prototype.processString = function(code) {
-  return replaceRequireAndDefine(code, this.amdPackages, this.amdModules);
-};
 
 // Write the new string into the range provided without modifying the size of arr.
 // If the size of arr changes, then ranges from the parsed code would be invalidated.
@@ -440,4 +413,68 @@ function replaceRequireAndDefine(code, amdPackages, amdModules) {
 
   // Return the new code
   return buffer.join('');
+}
+
+// Class for replacing in the generated code the AMD protected keyword 'require' and 'define'.
+// We are replacing these keywords by non conflicting words.
+// It uses the broccoli filter to go thru the different files (as string).
+class ReplaceRequireAndDefineFilter extends Filter {
+  constructor(inputTree, options) {
+    super(inputTree, options);
+
+    this.extensions = ['js'];
+    this.targetExtension = 'js';
+
+    options = options || {};
+
+    this.description = options.description;
+    this.amdPackages = options.amdPackages || [];
+    this.amdModules = options.amdModules;
+    this.excludePaths = options.excludePaths;
+  }
+
+  getDestFilePath(relativePath) {
+    relativePath = Filter.prototype.getDestFilePath.call(this, relativePath);
+    if (!relativePath) {
+      return relativePath;
+    }
+    for (var i = 0, len = this.excludePaths.length; i < len; i++) {
+      if (relativePath.indexOf(this.excludePaths[i]) === 0) {
+        return null;
+      }
+    }
+    return relativePath;
+  }
+
+  processString(code) {
+    return replaceRequireAndDefine(code, this.amdPackages, this.amdModules);
+  }
+}
+
+class LoadAmdModuleFileWriterFilter extends Filter {
+  constructor(inputTree, options) {
+    super(inputTree, options);
+
+    options = options || {};
+
+    this.amdModules = options.amdModules;
+  }
+
+  getDestFilePath(relativePath) {
+    relativePath = Filter.prototype.getDestFilePath.call(this, relativePath);
+    if (!relativePath) {
+      return relativePath;
+    }
+    if (relativePath === 'start-template.txt') {
+      return '/assets/load-amd-modules.js';
+    }
+    return null;
+  }
+
+  processString() {
+    return beautify_js(
+      startTemplate(buildModuleInfos(this.amdModules)),
+      { indentSize: 2 }
+    );
+  }
 }
