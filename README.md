@@ -11,6 +11,11 @@ This addon will:
 
 [View it live](http://esri.github.io/ember-cli-amd/) using the [ArcGIS API for JavaScript](https://developers.arcgis.com/javascript/).
 
+## Compatibility
+
+* Ember.js v2.18 or above
+* Ember CLI v2.13 or above
+
 ## Breaking changes
 The version 2.x has removed some old and unecessary features.
 
@@ -124,6 +129,7 @@ Find a bug or want to request a new feature?  Please let us know by submitting a
 ## Contributing
 
 Esri welcomes contributions from anyone and everyone. Please see our [guidelines for contributing](https://github.com/esri/contributing).
+See the [Contributing](CONTRIBUTING.md) guide for more details.
 
 ## Licensing
 Copyright 2018 Esri
