@@ -81,14 +81,13 @@ module.exports = {
 
   contentFor: function(type, config) {
     const rootURL = config.rootURL;
-    // TODO: TEST ROOTURL
-    if (type === 'head-footer') {
+    if (type === 'body') {
       // This adds the amd-config & loader script to the various index.html files
       return `<script src="${rootURL}${configScriptPath}.js"></script>` +
         `<script src="${this.app.options.amd.loader}" data-amd="true"></script>`;
     }
 
-    if (type === 'post-vendor') {
+    if (type === 'amd-mdoules') {
       // This adds the amd modules definition to the index.html files
         return `<script src="${rootURL}${defineModulesScriptPath}.js"></script>`;
     }
