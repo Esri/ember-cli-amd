@@ -29,20 +29,6 @@ var SilentError = require('silent-error');
 // The root of the project
 let root;
 
-// For contiinuous build, we need to cache a series of properties
-var indexHtmlCache = {
-  app: {
-    modulesAsString: '',
-    startScript: '',
-    startFileName: ''
-  },
-  test: {
-    modulesAsString: '',
-    startScript: '',
-    startFileName: ''
-  }
-};
-
 // Template used to manufacture the start script
 const startTemplate = _.template(fs.readFileSync(path.join(__dirname, 'start-template.txt'), 'utf8'));
 
@@ -57,6 +43,9 @@ const literals = {
   '(require)': '\'(eriuqer)\''
 };
 
+const configScriptPath = 'assets/amd-config';
+const defineModulesScriptPath = 'assets/define-amd-modules';
+
 module.exports = {
 
   name: 'ember-cli-amd',
@@ -65,42 +54,53 @@ module.exports = {
 
   included: function(app) {
     // Note: this functionis only called once even if using ember build --watch or ember serve
-
-    // This is the entry point for this addon. We will collect the amd definitions from the ember-cli-build.js and
-    // we will build the list off the amd modules usedby the application.
     root = app.project.root;
 
-    // This addon relies on an 'amd' options in the ember-cli-build.js file
     if (!app.options.amd) {
       return new SilentError('ember-cli-amd: No amd options specified in the ember-cli-build.js file.');
     }
 
-    // Merge the default options
-    app.options.amd = _.merge({
+    app.options.amd = Object.assign({
       packages: [],
       excludePaths: [],
       inline: true
     }, app.options.amd);
 
-    // Determine the type of loader.
     if (!app.options.amd.loader) {
       throw new Error('ember-cli-amd: You must specify a loader option the amd options in ember-cli-build.js.');
     }
 
+
     if (app.options.amd.configPath) {
       const configPath = app.options.amd.configPath;
       if (!fs.existsSync(path.join(root, configPath))) {
-        throw new Error(`ember-cli-amd: The file specified in the config path option "${configPath}" does not exist`);
+        throw new Error(`ember-cli-amd: The file specified in the configPath option "${configPath}" does not exist`);
       }
+    }
+  },
+
+  contentFor: function(type, config) {
+    const rootURL = config.rootURL;
+    // TODO: TEST ROOTURL
+    if (type === 'head-footer') {
+      // This adds the amd-config & loader script to the various index.html files
+      return `<script src="${rootURL}${configScriptPath}.js"></script>` +
+        `<script src="${this.app.options.amd.loader}" data-amd="true"></script>`;
+    }
+
+    if (type === 'post-vendor') {
+      // This adds the amd modules definition to the index.html files
+        return `<script src="${rootURL}${defineModulesScriptPath}.js"></script>`;
     }
   },
 
   treeForPublic: function() {
     if (this.app.options.amd.configPath && !this.app.options.amd.inline) {
+      // If not inlined, this is responsible for adding the amd config script asset to the build
       const configPath = this.app.options.amd.configPath;
       let configPathDir = path.join(root, path.dirname(configPath));
       
-      const destConfigFile = '/assets/amd-config.js'
+      const destConfigFile = `${configScriptPath}.js`;
       const amdConfig = funnel(new UnwatchedDir(configPathDir), {
         files: [path.basename(configPath)],
         getDestinationPath() {
@@ -108,34 +108,6 @@ module.exports = {
         }
       });
       return amdConfig;
-    }
-  },
-
-  contentFor: function(type) {
-    if (type === 'head-footer') {
-      // Add the amd-config script
-      let amdScripts = '';
-      if (this.app.options.amd.configPath) {
-        if (this.app.options.amd.inline) {
-          var amdConfigScript;
-          if (this.app.options.amd.configPath) {
-            amdConfigScript = fs.readFileSync(path.join(root, this.app.options.amd.configPath), 'utf8');
-          }
-          amdScripts += `<script>${amdConfigScript}</script>`;
-        } else {
-          amdScripts += `<script src="/assets/amd-config.js"></script>`
-        }
-      }
-  
-      // Add the loader
-      var loaderSrc = this.app.options.amd.loader;
-      amdScripts += `<script src="${loaderSrc}" data-amd="true"></script>`;
-
-      return amdScripts;
-    }
-
-    if (type === 'post-vendor') {
-        return '<script src="/assets/load-amd-modules.js"></script>';
     }
   },
 
@@ -154,8 +126,10 @@ module.exports = {
       amdModules: this.amdModules,
       excludePaths: this.app.options.amd.excludePaths
     })];
+
     if (!this.app.options.amd.inline) {
-      postProcessTrees.push(new LoadAmdModuleFileWriterFilter(
+      // If not inlined, this class is responsible for adding the amd modules definition script to the build
+      postProcessTrees.push(new DefineAmdModulesFileWriter(
         funnel(new UnwatchedDir(root), {
           files: ['start-template.txt']
         }), {
@@ -167,7 +141,7 @@ module.exports = {
   },
 
   preBuild: function() {
-    // Clear AMD Modules so that any changes can be captured
+    // Clear AMD Modules so that postprocess start with an empty set
     this.amdModules.clear();
   },
 
@@ -175,9 +149,6 @@ module.exports = {
     if (!this.app.options.amd) {
       return;
     }
-
-    // When ember build --watch or ember serve are used, this function will be called over and over
-    // as a user updates code. We need to figure what we have to build or copy.
 
     // Get the modules information
     const moduleInfos = buildModuleInfos(this.amdModules);
@@ -187,12 +158,10 @@ module.exports = {
     // Amd style is made of 3 steps:
     // - amd configuration (optional), controlled by the this.app.options.amd.configPath
     // - loader: could be based on local build or from cdn
-    // - start of the app: load the amd modules used by the app and boorstrap the app
-
+    // - amd module definition: define the amd modules in the ember loader used by the app
     this.indexBuilder({
       directory: result.directory,
       indexFile: this.app.options.outputPaths.app.html,
-      indexHtmlCache: indexHtmlCache.app,
       moduleInfos
     });
 
@@ -200,12 +169,13 @@ module.exports = {
     this.indexBuilder({
       directory: result.directory,
       indexFile: 'tests/index.html',
-      indexHtmlCache: indexHtmlCache.test,
       moduleInfos
     });
   },
 
   indexBuilder: function(config) {
+    // Modify the index file to replace any inline ember loader require and defines
+    // Also, modify the amd config and amd module definition scripts depending on necessity and inline options
     const indexPath = path.join(config.directory, config.indexFile);
 
     let indexHtml;
@@ -219,56 +189,40 @@ module.exports = {
     const cheerioQuery = cheerio.load(indexHtml);
 
     // Add the script that will be responsible for loading the amd-modules, added in {{content-for "post-vendor"}}
-    const loadModulesScriptElement = cheerioQuery('script[src^="/assets/load-amd-modules"]');
+    const defineAmdModulesScriptElement = cheerioQuery(`script[src^="${defineModulesScriptPath}"]`);
   
-    if (config.moduleInfos.names.trim() !== '') {
-      // Create the script contents that will load the scripts
-      const loadModulesScriptContent = startTemplate(config.moduleInfos);
-
-      if (this.app.options.amd.inline) {
-        // If writing inline, display 
-        loadModulesScriptElement.html(loadModulesScriptContent);
-        loadModulesScriptElement.attr('src', null);
-      }
-    } else {
-      // No modules to load, so remove the script tag
-      loadModulesScriptElement.remove();
+    if (config.moduleInfos.names.trim() === '') {
+      // No modules to load, remove the define amd modules script
+      defineAmdModulesScriptElement.remove();
+    } else if (this.app.options.amd.inline) {
+      // Inline the define amd modules script
+      defineAmdModulesScriptElement.html(startTemplate(config.moduleInfos));
+      defineAmdModulesScriptElement.attr('src', null);
     }
 
-    //TODO: Rewrite any inline scripts with require or define
+    
+    // Add the script that will be responsible for setting the amd configuration 
+    const amdConfigScriptElement = cheerioQuery(`script[src^="${configScriptPath}"]`);
+    if (!this.app.options.amd.configPath) {
+      // No config, remove the amd config script
+      amdConfigScriptElement.remove();
+    } else if (this.app.options.amd.inline) {
+      // Inline the amd config script
+      const amdConfigScriptContent = fs.readFileSync(path.join(root, this.app.options.amd.configPath), 'utf8');
+      amdConfigScriptElement.html(amdConfigScriptContent);
+      amdConfigScriptElement.attr('src', null);
+    }
 
+    // TODO: TEST THIS
+    // // Any inline scripts the use the ember loader require or define need to be updated
     // var scriptElements = cheerioQuery('script[src="assets/load-amd-modules.js"]');
-    // var scriptsToLoad = [];
-    // var scriptsToPostExecute = [];
-    // scriptElements.each(function() {
-    //   if (cheerioQuery(this).attr('src')) {
-    //   } else {
-    //     scriptsToPostExecute.push(cheerioQuery(this).html());
-    //   }
+    // scriptElements.each(function(i ,elem) {
+    //   const scriptElement = cheerioQuery(this);
+    //   scriptElement.html(replaceRequireAndDefine(scriptElement.html()));
     // });
 
-    // // If we have scripts that have to be executed after the AMD load, then serialize them into a file
-    // // afterLoading.js and add this file to the list of AMD modules.
-    // if (scriptsToPostExecute.length > 0) {
-    //   var afterLoadingScript = replaceRequireAndDefine(scriptsToPostExecute.join('\n\n'));
-    //   fs.writeFileSync(path.join(config.directory, 'afterLoading.js'), beautify_js(afterLoadingScript, {
-    //     indent_size: 2
-    //   }));
-    //   scriptsToLoad.push('"/afterLoading.js"');
-    // }
-
-    // We have to rebuild this index file.
-    config.indexHtmlCache.modulesAsString = config.moduleInfos.names;
-
-    // Beautify the index.html
-    var html = beautify_html(cheerioQuery.html(), {
-      indent_size: 2
-    });
-
     // Rewrite the index file
-    fs.writeFileSync(indexPath, html);
-
-    return config.indexHtmlCache;
+    fs.writeFileSync(indexPath, beautify_html(cheerioQuery.html(), { indent_size: 2 }));
   }
 };
 
@@ -451,7 +405,8 @@ class ReplaceRequireAndDefineFilter extends Filter {
   }
 }
 
-class LoadAmdModuleFileWriterFilter extends Filter {
+// Class for 
+class DefineAmdModulesFileWriter extends Filter {
   constructor(inputTree, options) {
     super(inputTree, options);
 
@@ -466,7 +421,7 @@ class LoadAmdModuleFileWriterFilter extends Filter {
       return relativePath;
     }
     if (relativePath === 'start-template.txt') {
-      return '/assets/load-amd-modules.js';
+      return `${defineModulesScriptPath}.js`;
     }
     return null;
   }

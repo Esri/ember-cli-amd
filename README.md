@@ -22,6 +22,19 @@ The version 2.x has removed some old and unecessary features.
 
 `ember install ember-cli-amd`
 
+Enusre that the index.html files (app/index.html & tests/index.html) contain the `{{content-for "amd-modules"}}` directive following the vendor script.
+
+e.g.
+```hbs
+    {{content-for "body"}}
+   
+    <script src="{{rootURL}}assets/vendor.js"></script>
+    {{content-for "amd-modules"}}
+    <script src="{{rootURL}}assets/app.js"></script>
+    
+    {{content-for "body-footer"}}
+```
+
 Update the ember-cli-build file. See configuration below as an example:
 ```javascript
 var app = new EmberApp({
@@ -45,7 +58,13 @@ var app = new EmberApp({
     // - when using an AMD api locally and copied under public folder. The files will be copied under the build folder. These files are pure AMD
     //   modules and should not be converted.
     // - when copying from public to build directory files that are pure JS
-    excludePaths: ['assets/jspai', 'assets/myLibThatDontUseEmberDefineOrRequire']
+    excludePaths: ['assets/jspai', 'assets/myLibThatDontUseEmberDefineOrRequire'],
+    // Optional: A boolean flag the indicate whether the injected AMD config file and the AMD Module definition file should be
+    // inserted into the HTML using an inline script (e.g. <script>var dojoConfig = { async: true }</script>)
+    // or inserted using a src (e.g. <script src="/assets/amd-config.js"></script>)
+    // Using inline false is handy when deploying an app with a security content policy that does not allow inline scripts to run
+    // Defaults to true
+    inline: true | false
   }
 });
 ```
