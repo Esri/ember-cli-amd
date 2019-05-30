@@ -43,8 +43,8 @@ const literals = {
   '(require)': '\'(eriuqer)\''
 };
 
-const configScriptPath = 'assets/amd-config';
-const defineModulesScriptPath = 'assets/define-amd-modules';
+const configScriptPath = '/assets/amd-config';
+const defineModulesScriptPath = '/assets/define-amd-modules';
 
 module.exports = {
 
@@ -79,17 +79,16 @@ module.exports = {
     }
   },
 
-  contentFor: function(type, config) {
-    const rootURL = config.rootURL;
+  contentFor: function(type) {
     if (type === 'body') {
       // This adds the amd-config & loader script to the various index.html files
-      return `<script src="${rootURL}${configScriptPath}.js"></script>` +
+      return `<script src="${configScriptPath}.js"></script>` +
         `<script src="${this.app.options.amd.loader}" data-amd="true"></script>`;
     }
 
-    if (type === 'amd-mdoules') {
+    if (type === 'amd-modules') {
       // This adds the amd modules definition to the index.html files
-        return `<script src="${rootURL}${defineModulesScriptPath}.js"></script>`;
+        return `<script src="${defineModulesScriptPath}.js"></script>`;
     }
   },
 
@@ -139,11 +138,6 @@ module.exports = {
     return merge(postProcessTrees);
   },
 
-  preBuild: function() {
-    // Clear AMD Modules so that postprocess start with an empty set
-    this.amdModules.clear();
-  },
-
   postBuild: function(result) {
     if (!this.app.options.amd) {
       return;
@@ -187,8 +181,16 @@ module.exports = {
 
     const cheerioQuery = cheerio.load(indexHtml);
 
+
+    // Any inline scripts the use the ember loader require or define need to be updated
+    var scriptElements = cheerioQuery('body > script:not([src])');
+    scriptElements.each(function() {
+      const scriptElement = cheerioQuery(this);
+      scriptElement.html(replaceRequireAndDefine(scriptElement.html()));
+    });
+    
     // Add the script that will be responsible for loading the amd-modules, added in {{content-for "post-vendor"}}
-    const defineAmdModulesScriptElement = cheerioQuery(`script[src^="${defineModulesScriptPath}"]`);
+    const defineAmdModulesScriptElement = cheerioQuery(`body > script[src^="${defineModulesScriptPath}"]`);
   
     if (config.moduleInfos.names.trim() === '') {
       // No modules to load, remove the define amd modules script
@@ -201,7 +203,7 @@ module.exports = {
 
     
     // Add the script that will be responsible for setting the amd configuration 
-    const amdConfigScriptElement = cheerioQuery(`script[src^="${configScriptPath}"]`);
+    const amdConfigScriptElement = cheerioQuery(`body > script[src^="${configScriptPath}"]`);
     if (!this.app.options.amd.configPath) {
       // No config, remove the amd config script
       amdConfigScriptElement.remove();
@@ -211,14 +213,6 @@ module.exports = {
       amdConfigScriptElement.html(amdConfigScriptContent);
       amdConfigScriptElement.attr('src', null);
     }
-
-    // TODO: TEST THIS
-    // // Any inline scripts the use the ember loader require or define need to be updated
-    // var scriptElements = cheerioQuery('script[src="assets/load-amd-modules.js"]');
-    // scriptElements.each(function(i ,elem) {
-    //   const scriptElement = cheerioQuery(this);
-    //   scriptElement.html(replaceRequireAndDefine(scriptElement.html()));
-    // });
 
     // Rewrite the index file
     fs.writeFileSync(indexPath, beautify_html(cheerioQuery.html(), { indent_size: 2 }));
@@ -404,7 +398,7 @@ class ReplaceRequireAndDefineFilter extends Filter {
   }
 }
 
-// Class for 
+// Class for creating the script asset that is responsible for loading and defining the amd modules
 class DefineAmdModulesFileWriter extends Filter {
   constructor(inputTree, options) {
     super(inputTree, options);

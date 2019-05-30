@@ -16,7 +16,6 @@ module.exports = function(defaults) {
           'esri', 'dojo', 'dojox', 'dijit', 'put-selector', 'xstyle', 'dgrid'
       ],
       configPath: 'tests/dummy/config/dojo-config.js',
-      inline: false
     }
   });
 
