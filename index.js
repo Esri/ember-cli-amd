@@ -30,7 +30,7 @@ var SilentError = require('silent-error');
 let root;
 
 // Template used to manufacture the start script
-const startTemplate = _.template(fs.readFileSync(path.join(__dirname, 'start-template.txt'), 'utf8'));
+const startTemplate = _.template(fs.readFileSync(path.join(__dirname, 'addon/start-template.txt'), 'utf8'));
 
 // Identifiers and Literals to replace in the code to avoid conflict with amd loader
 const identifiers = {
@@ -128,7 +128,7 @@ module.exports = {
     if (!this.app.options.amd.inline) {
       // If not inlined, this class is responsible for adding the amd modules definition script to the build
       postProcessTrees.push(new DefineAmdModulesFileWriter(
-        funnel(new UnwatchedDir(root), {
+        funnel('addon', {
           files: ['start-template.txt']
         }), {
           amdModules: this.amdModules
@@ -419,9 +419,9 @@ class DefineAmdModulesFileWriter extends Filter {
     return null;
   }
 
-  processString() {
+  processString(template) {
     return beautify_js(
-      startTemplate(buildModuleInfos(this.amdModules)),
+      _.template(template)(buildModuleInfos(this.amdModules)),
       { indentSize: 2 }
     );
   }
