@@ -1,0 +1,20 @@
+require([
+  <%= names %>
+], function (<%= objects %>) {
+  var adoptables = [<%= adoptables %>];
+  var isVendor = new RegExp('<%= vendor %>(.*js)');
+  function recursiveRequire(i, scripts){
+    if (i >= scripts.length) {
+      return;
+    }
+    require([scripts[i]], function() {
+      if (isVendor.test(scripts[i])) {
+        adoptables.forEach(function(adoptable){
+          enifed(adoptable.name, [], function(){return adoptable.obj;});
+        });
+      }
+      recursiveRequire(++i, scripts);
+    });
+  }
+  recursiveRequire(0, [<%= scripts %>]);
+});

@@ -1,8 +1,0 @@
-require([
-  <%= names %>
-], function (<%= objects %>) {
-  var adoptables = [<%= adoptables %>];
-  adoptables.forEach(function(adoptable){
-    enifed(adoptable.name, [], function(){return adoptable.obj;});
-  });
-});

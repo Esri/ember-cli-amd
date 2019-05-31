@@ -15,7 +15,7 @@ module.exports = function(defaults) {
       packages: [ // user defined AMD packages to search for in application
           'esri', 'dojo', 'dojox', 'dijit', 'put-selector', 'xstyle', 'dgrid'
       ],
-      configPath: 'tests/dummy/config/dojo-config.js',
+      //configPath: 'tests/dummy/config/dojo-config.js'
     }
   });
 
