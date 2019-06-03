@@ -27,19 +27,6 @@ The version 2.x has removed some old and unecessary features.
 
 `ember install ember-cli-amd`
 
-Enusre that the index.html files (app/index.html & tests/index.html) contain the `{{content-for "amd-modules"}}` directive following the vendor script.
-
-e.g.
-```hbs
-    {{content-for "body"}}
-   
-    <script src="{{rootURL}}assets/vendor.js"></script>
-    {{content-for "amd-modules"}}
-    <script src="{{rootURL}}assets/app.js"></script>
-    
-    {{content-for "body-footer"}}
-```
-
 Update the ember-cli-build file. See configuration below as an example:
 ```javascript
 var app = new EmberApp({
