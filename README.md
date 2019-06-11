@@ -45,7 +45,7 @@ var app = new EmberApp({
     // - when using an AMD api locally and copied under public folder. The files will be copied under the build folder. These files are pure AMD
     //   modules and should not be converted.
     // - when copying from public to build directory files that are pure JS
-    excludePaths: ['assets/jspai', 'assets/myLibThatDontUseEmberDefineOrRequire']
+    excludePaths: ['assets/jsapi', 'assets/myLibThatDontUseEmberDefineOrRequire']
   }
 });
 ```
@@ -75,24 +75,6 @@ var dojoConfig = {
   async: true
 };
 ```
-
-# Using a CDN for your application's assets
-When using `ember-cli-deploy` it is common to deploy the assets of an ember application to a different location (cdn) from the `index.html`. The [ember-cli-deploy](http://ember-cli.com/ember-cli-deploy/docs/v0.5.x/fingerprinting/) documentation discusess how to use fingerprinting to prepend fully-qualified urls to the asset locations. As of v0.4.1 of `ember-cli-amd` these same options are applied to the AMD related scripts that are injected into the page, thus allowing this to work smoothly with `ember-cli-deploy`.
-
-# Running
-
-* `ember server`
-* Visit your app at http://localhost:4200.
-
-### Running tests
-
-* `ember test`
-* `ember test --server`
-
-### Running the dummy application
-
-* `ember serve`
-* Visit the dummy application at [http://localhost:4200](http://localhost:4200).
 
 ## Resources
 * For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).
