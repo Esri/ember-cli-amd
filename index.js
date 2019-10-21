@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
 const Filter = require('broccoli-filter');
-const esprima = require('esprima');
+const espree = require('espree');
 const eswalk = require('esprima-walk');
 const _ = require('lodash');
 const beautify_js = require('js-beautify');
@@ -319,8 +319,10 @@ function write(arr, str, range) {
 // Replace require and define by non-conflicting verbs
 function replaceRequireAndDefine(code, amdPackages, amdModules) {
   // Parse the code as an AST
-  const ast = esprima.parseScript(code, {
-    range: true
+  const ast = espree.parse(code, {
+    range: true,
+    ecmaVersion: 9,
+    sourceType: 'script',
   });
 
   // Split the code into an array for easier substitutions
