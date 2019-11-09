@@ -15,13 +15,11 @@
 const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
-const Filter = require('broccoli-filter');
-const espree = require('espree');
-const eswalk = require('esprima-walk');
 const _ = require('lodash');
 const beautify_js = require('js-beautify');
 const beautify_html = require('js-beautify').html;
-var SilentError = require('silent-error');
+
+const ReplaceRequireAndDefineFilter = require('./lib/replace-require-and-define-filter');
 
 // The root of the project
 let root;
@@ -43,24 +41,14 @@ var indexHtmlCache = {
 // Template used to manufacture the start script
 const startTemplate = _.template(fs.readFileSync(path.join(__dirname, 'start-template.txt'), 'utf8'));
 
-// Identifiers and Literals to replace in the code to avoid conflict with amd loader
-const identifiers = {
-  'require': 'eriuqer',
-  'define': 'enifed'
-};
-
-const literals = {
-  'require': '\'eriuqer\'',
-  '(require)': '\'(eriuqer)\''
-};
 
 module.exports = {
 
   name: 'ember-cli-amd',
 
-  amdModules: new Set(),
+  externalAmdModules: new Set(),
 
-  included: function(app) {
+  included: function (app) {
     // Note: this functionis only called once even if using ember build --watch or ember serve
 
     // This is the entry point for this addon. We will collect the amd definitions from the ember-cli-build.js and
@@ -69,38 +57,45 @@ module.exports = {
 
     // This addon relies on an 'amd' options in the ember-cli-build.js file
     if (!app.options.amd) {
-      return new SilentError('ember-cli-amd: No amd options specified in the ember-cli-build.js file.');
+      return new Error('ember-cli-amd: No amd options specified in the ember-cli-build.js file.');
     }
 
     // Merge the default options
-    app.options.amd = _.merge({ packages: [], excludePaths: [] }, app.options.amd);
+    app.options.amd = Object.assign({
+      packages: [],
+      excludePaths: []
+    }, app.options.amd);
 
     // Determine the type of loader.
     if (!app.options.amd.loader) {
       throw new Error('ember-cli-amd: You must specify a loader option the amd options in ember-cli-build.js.');
     }
+
+    if (app.options.amd.configPath) {
+      const configPath = app.options.amd.configPath;
+      if (!fs.existsSync(path.join(app.project.root, configPath))) {
+        throw new Error(`ember-cli-amd: The file specified in the configPath option "${configPath}" does not exist`);
+      }
+    }
   },
 
-  postprocessTree: function(type, tree) {
+  postprocessTree: function (type, tree) {
     // Note: this function will be called once during the continuous builds. However, the tree returned will be directly manipulated.
     // It means that the de-requireing will be going on.
-    if (!this.app.options.amd) {
-      return tree;
-    }
-
     if (type !== 'all') {
       return tree;
     }
 
     // Use the RequireFilter class to replace in the code that conflict with AMD loader
-    return new RequireFilter(tree, {
+    this.externalAmdModules.clear();
+    return new ReplaceRequireAndDefineFilter(tree, {
       amdPackages: this.app.options.amd.packages,
-      amdModules: this.amdModules,
+      externalAmdModules: this.externalAmdModules,
       excludePaths: this.app.options.amd.excludePaths
     });
   },
 
-  postBuild: function(result) {
+  postBuild: function (result) {
 
     if (!this.app.options.amd) {
       return;
@@ -146,7 +141,7 @@ module.exports = {
     });
   },
 
-  indexBuilder: function(config) {
+  indexBuilder: function (config) {
     // If the current index html is not the same as teh one we built, it means
     // that another extension must have forced to regenerate the index html or
     // this is the first time this extension is running
@@ -175,7 +170,7 @@ module.exports = {
     var scriptElements = cheerioQuery('body > script');
     var scriptsToLoad = [];
     var scriptsToPostExecute = [];
-    scriptElements.each(function() {
+    scriptElements.each(function () {
       if (cheerioQuery(this).attr('src')) {
         scriptsToLoad.push(`"${cheerioQuery(this).attr('src')}"`)
       } else {
@@ -233,14 +228,14 @@ module.exports = {
     return config.indexHtmlCache;
   },
 
-  buildModuleInfos: function() {
+  buildModuleInfos: function () {
 
     // Build different arrays representing the modules for the injection in the start script
     const objs = [];
     const names = [];
     const adoptables = [];
     let index = 0;
-    this.amdModules.forEach(function(amdModule) {
+    this.externalAmdModules.forEach(function (amdModule) {
       objs.push(`mod${index}`);
       names.push(`'${amdModule}'`);
       adoptables.push(`{name:'${amdModule}',obj:mod${index}}`);
@@ -256,169 +251,4 @@ module.exports = {
   }
 };
 
-//
-// Class for replacing in the generated code the AMD protected keyword 'require' and 'define'.
-// We are replacing these keywords by non conflicting words.
-// It uses the broccoli filter to go thru the different files (as string).
-function RequireFilter(inputTree, options) {
-  if (!(this instanceof RequireFilter)) {
-    return new RequireFilter(inputTree, options);
-  }
 
-  Filter.call(this, inputTree, options); // this._super()
-
-  options = options || {};
-
-  this.inputTree = inputTree;
-  this.files = options.files || [];
-  this.description = options.description;
-  this.amdPackages = options.amdPackages || [];
-  this.amdModules = options.amdModules;
-  this.excludePaths = options.excludePaths;
-}
-
-RequireFilter.prototype = Object.create(Filter.prototype);
-RequireFilter.prototype.constructor = RequireFilter;
-
-RequireFilter.prototype.extensions = ['js'];
-RequireFilter.prototype.targetExtension = 'js';
-
-RequireFilter.prototype.getDestFilePath = function(relativePath) {
-  relativePath = Filter.prototype.getDestFilePath.call(this, relativePath);
-  if (!relativePath) {
-    return relativePath;
-  }
-  for (var i = 0, len = this.excludePaths.length; i < len; i++) {
-    if (relativePath.indexOf(this.excludePaths[i]) === 0) {
-      return null;
-    }
-  }
-  return relativePath;
-}
-RequireFilter.prototype.processString = function(code) {
-  return replaceRequireAndDefine(code, this.amdPackages, this.amdModules);
-};
-
-// Write the new string into the range provided without modifying the size of arr.
-// If the size of arr changes, then ranges from the parsed code would be invalidated.
-// Since str.length can be shorter or longer than the range it is overwriting,
-// write str into the first position of the range and then fill the remainder of the
-// range with undefined.
-// 
-// We know that a range will only be written to once.
-// And since the array is used for positioning and then joined, this method of overwriting works.
-function write(arr, str, range) {
-  const offset = range[0];
-  arr[offset] = str;
-  for (let i = offset + 1; i < range[1]; i++) {
-    arr[i] = undefined;
-  }
-}
-
-// Use Esprima to parse the code and eswalk to walk thru the code
-// Replace require and define by non-conflicting verbs
-function replaceRequireAndDefine(code, amdPackages, amdModules) {
-  // Parse the code as an AST
-  const ast = espree.parse(code, {
-    range: true,
-    ecmaVersion: 9,
-    sourceType: 'script',
-  });
-
-  // Split the code into an array for easier substitutions
-  const buffer = code.split('');
-
-  // Walk thru the tree, find and replace our targets
-  eswalk(ast, function(node) {
-    if (!node) {
-      return;
-    }
-
-    switch (node.type) {
-      case 'CallExpression':
-
-        if (!amdPackages || !amdModules) {
-          // If not provided then we don't need to track them
-          break;
-        }
-
-        // Collect the AMD modules
-        // Looking for something like define(<name>, [<module1>, <module2>, ...], <function>)
-        // This is the way ember defines a module
-        if (node.callee.name === 'define') {
-
-          if (node.arguments.length < 2 || node.arguments[1].type !== 'ArrayExpression' || !node.arguments[1].elements) {
-            return;
-          }
-
-          node.arguments[1].elements.forEach(function(element) {
-            if (element.type !== 'Literal') {
-              return;
-            }
-
-            const isAMD = amdPackages.some(function(amdPackage) {
-              if (typeof element.value !== 'string') {
-                return false;
-              }
-              return element.value.indexOf(amdPackage + '/') === 0 || element.value === amdPackage;
-            });
-
-            if (!isAMD) {
-              return;
-            }
-
-            amdModules.add(element.value);
-
-          });
-
-          return;
-        }
-
-        // Dealing with ember-auto-import eval
-        if (node.callee.name === 'eval' && node.arguments[0].type === 'Literal' && typeof node.arguments[0].value === 'string') {
-          const evalCode = node.arguments[0].value;
-          const evalCodeAfter = replaceRequireAndDefine(evalCode, amdPackages, amdModules);
-          if (evalCode !== evalCodeAfter) {
-            write(buffer, "eval(" + JSON.stringify(evalCodeAfter) + ");", node.range);
-          }
-        }
-
-        return;
-
-      case 'Identifier':
-        {
-          // We are dealing with code, make sure the node.name is not inherited from object 
-          if (!identifiers.hasOwnProperty(node.name)) {
-            return;
-          }
-
-          const identifier = identifiers[node.name];
-          if (!identifier) {
-            return;
-          }
-
-          write(buffer, identifier, node.range);
-        }
-        return;
-
-      case 'Literal':
-        {
-          // We are dealing with code, make sure the node.name is not inherited from object 
-          if (!literals.hasOwnProperty(node.value)) {
-            return;
-          }
-
-          const literal = literals[node.value];
-          if (!literal) {
-            return;
-          }
-
-          write(buffer, literal, node.range);
-        }
-        return;
-    }
-  });
-
-  // Return the new code
-  return buffer.join('');
-}
