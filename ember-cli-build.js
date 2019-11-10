@@ -2,9 +2,16 @@
 
 const EmberAddon = require('ember-cli/lib/broccoli/ember-addon');
 
-module.exports = function(defaults) {
+module.exports = function (defaults) {
   let app = new EmberAddon(defaults, {
-    // Add options here
+    amd: {
+      loader: 'https://js.arcgis.com/3.28/',
+      packages: [
+        // user defined AMD packages to search for in application
+        'esri', 'dojo', 'dojox', 'dijit', 'put-selector', 'xstyle', 'dgrid'
+      ],
+      configPath: 'tests/dummy/config/dojo-config.js'
+    }
   });
 
   /*
