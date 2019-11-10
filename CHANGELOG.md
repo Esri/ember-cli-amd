@@ -2,8 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.1.1]
+- Small fix: Remove old AMD modules from continuous bbuilds
+
 ## [2.1.0]
 - Use espree instead of esprima (https://github.com/Esri/ember-cli-amd/pull/47)
+- Refactor into modules
 
 ## [2.0.2]
 - Improved compatibility with ember-auto-import
