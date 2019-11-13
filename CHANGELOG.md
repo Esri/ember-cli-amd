@@ -2,8 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.1.2]
+- Small fix: Fixed an issue under `ember serve`, index.html could get corrupted
+
 ## [2.1.1]
-- Small fix: Remove old AMD modules from continuous bbuilds
+- Small fix: Remove old AMD modules from continuous builds
 
 ## [2.1.0]
 - Use espree instead of esprima (https://github.com/Esri/ember-cli-amd/pull/47)
