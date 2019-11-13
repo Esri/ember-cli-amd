@@ -9,6 +9,7 @@
 /node_modules/
 
 # misc
+/.vscode
 /.sass-cache
 /connect.lock
 /coverage/

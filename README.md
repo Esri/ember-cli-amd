@@ -29,11 +29,11 @@ var app = new EmberApp({
     // Specify the loader path. Can be a CDN path or a relative path in the dist folder
     // - CDN: loader: 'https://js.arcgis.com/3.15/'
     // - Local: loader: 'assets/jsapi/dojo.js'
-    loader: 'https://js.arcgis.com/3.15/',
+    loader: 'https://js.arcgis.com/4.11/',
     // User defined AMD packages used in the application
     // import foo from 'esri/foo';
     packages: ['esri','dojo','dojox','dijit','put-selector','xstyle','dgrid'],
-    // The AMD configuration file path relative to the project root.
+    // Optional: The AMD configuration file path relative to the project root.
     // The file will be copied to the output directory (./dist) and the configuration file
     // will be loaded before the loader is loaded. The configuration file must define the global variable used by the specific loader.
     // For dojo, the supported global variable name are `dojoConfig`, `djConfig` or `require`.
