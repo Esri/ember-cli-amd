@@ -38,7 +38,7 @@ var app = new EmberApp({
     // Optional: The AMD configuration script file path relative to the project root.
     // The file will be copied to the output directory (./dist) and the configuration script
     // will be executed before the AMD loader is loaded. 
-    // configPath: 'config/amd-config.js',
+    configPath: 'config/amd-config.js',
     
     // Optional: a list of relative paths from the build directory that should not be parsed by ember-cli-amd.
     // This is useful for:
