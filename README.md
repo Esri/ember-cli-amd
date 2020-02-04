@@ -68,6 +68,16 @@ module.exports = function(defaults) {
 };
 ```
 
+```javascript
+// app/components/map/index.js
+import Component from '@glimmer/component';
+import Map from 'esri/Map';
+
+class MapComponent extends Component {
+  // Do something with Map: const map = new Map({});
+}
+```
+
 ## Resources
 * For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).
 * To learn more about the ArcGIS API for JavaScript, visit [the developers pages](https://developers.arcgis.com/javascript/).
