@@ -17,6 +17,9 @@ const path = require('path');
 
 const ReplaceRequireAndDefineFilter = require('./lib/replace-require-and-define-filter');
 const convertIndexToAmd = require('./lib/convert-index-to-amd');
+const writeFile = require('broccoli-file-creator');
+const Funnel = require('broccoli-funnel');
+const mergeTrees = require('broccoli-merge-trees');
 
 module.exports = {
 
@@ -47,13 +50,17 @@ module.exports = {
     if (!app.options.amd.loader) {
       throw new Error('ember-cli-amd: You must specify a loader option the amd options in ember-cli-build.js.');
     }
+  },
 
-    if (app.options.amd.configPath) {
-      const configPath = app.options.amd.configPath;
-      if (!fs.existsSync(path.join(app.project.root, configPath))) {
-        throw new Error(`ember-cli-amd: The file specified in the configPath option "${configPath}" does not exist`);
-      }
+  contentFor(type) {
+    if (type === 'body-footer') {
+      return '<script src="amd-loading.js" data-amd-loading=true></script>';
     }
+  },
+
+  treeForPublic() {
+    const tree = writeFile('amd-loading.js', '');
+    return mergeTrees([tree]);
   },
 
   postprocessTree(type, tree) {
