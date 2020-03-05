@@ -13,17 +13,17 @@ This addon will:
 [View it live](http://esri.github.io/ember-cli-amd/) using the [ArcGIS API for JavaScript](https://developers.arcgis.com/javascript/).
 
 ## Breaking changes
-The version 2.x has removed some old and unecessary features.
-
-## Features
-* Load AMD modules and register them in Ember loader. [ember-cli/loader.js](https://github.com/ember-cli/loader.js).
-* Works with AMD CDN libraries, such as [ArcGIS API for JavaScript](https://developers.arcgis.com/javascript/).
+The version 3.x introduce the following breaking changes:
+- No more configPath. Use other addons to load the scripts you need in your header
+- The AMD module loading will be done in a separate javascript file. This is to keep the index.html as small as possible and optimized for caching
+- The loading script will be fingerprinted if you have turned on this feature in your build
 
 ## Usage
 
 `ember install ember-cli-amd`
 
 Update the ember-cli-build file. See configuration below as an example:
+
 ```javascript
 var app = new EmberApp({
   amd : {
@@ -32,28 +32,29 @@ var app = new EmberApp({
     // - Local: loader: 'assets/jsapi/init.js'
     loader: 'https://js.arcgis.com/4.14/',
     
-    // User defined AMD packages used in the application
+    // AMD packages from which modules are imported from in your application.
+    // Used to parse the import statements and discover the AMD modules from the other modules.
     packages: ['esri','dojo'],
-    
-    // Optional: The AMD configuration script file path relative to the project root.
-    // The file will be copied to the output directory (./dist) and the configuration script
-    // will be executed before the AMD loader is loaded. 
-    configPath: 'config/amd-config.js',
     
     // Optional: a list of relative paths from the build directory that should not be parsed by ember-cli-amd.
     // This is useful for:
     // - when using an AMD api locally and copied under public folder. The files will be copied under the build folder. These files are pure AMD
     //   modules and should not be converted.
-    // - when copying from public to build directory files that are pure JS
-    excludePaths: ['assets/jsapi', 'assets/myLibThatDontUseEmberDefineOrRequire']
+    // - when copying from public to build directory files that are pure JS or pure AMD
+    excludePaths: ['assets/jsapi', 'assets/myLibThatDontUseEmberDefineOrRequire'],
+
+    // Optional: the path to javascript file that should be created for loading the AMD modules
+    // default: assets/amd-loading.js
+    amdLoadingFilePath: 'assets/amd-loading.js'
   }
 });
 ```
 
 ## Example using the CDN resources
 
+You ember-cli-build.js:
+
 ```javascript
-// ember-cli-build.js
 module.exports = function(defaults) {
 
   var app = new EmberApp(defaults, {
@@ -68,14 +69,105 @@ module.exports = function(defaults) {
 };
 ```
 
+Your component:
+
 ```javascript
-// app/components/map/index.js
 import Component from '@glimmer/component';
 import Map from 'esri/Map';
 
 class MapComponent extends Component {
   // Do something with Map: const map = new Map({});
 }
+```
+
+Your original index.html:
+
+```html
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>My App</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  {{content-for "head"}}
+  <link rel="stylesheet" href="assets/vendor.css">
+  <link rel="stylesheet" href="assets/myapp.css">
+  {{content-for "head-footer"}}
+
+</head>
+
+<body>
+
+  {{content-for "body"}}
+  <script src="assets/vendor.js"></script>
+  <script src="assets/myapp.js"></script>
+  {{content-for "body-footer"}}
+</body>
+
+</html>
+```
+
+The results will be:
+- a transformed index.html in your dist directory
+- an additional script file will be created under the dist directory under assets/amd-loading.js
+
+dist/index.html:
+
+```html
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>My App</title>
+  <meta name="description" content>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="assets/vendor.css">
+  <link rel="stylesheet" href="assets/myapp.css">
+</head>
+
+<body>
+  <script src="https://jsdev.arcgis.com/4.15/init.js" data-amd="true"></script>
+  <script src="assets/amd-loading.js" data-amd-loading="true"></script>
+</body>
+
+</html>
+```
+
+dist/assets/amd-loading.js
+
+```javascript
+require([
+  'esri/Map'
+], function(mod0) {
+  var adoptables = [{
+    name: 'esri/Map',
+    obj: mod0
+  }];
+  var isVendor = new RegExp('vendor(.*js)');
+
+  function recursiveRequire(i, scripts) {
+    if (i >= scripts.length) {
+      return;
+    }
+    require([scripts[i]], function() {
+      if (isVendor.test(scripts[i])) {
+        adoptables.forEach(function(adoptable) {
+          enifed(adoptable.name, [], function() {
+            return adoptable.obj;
+          });
+        });
+      }
+      recursiveRequire(++i, scripts);
+    });
+  }
+  recursiveRequire(0, ["assets/vendor.js", "assets/nickel.js"]);
+});
 ```
 
 ## Dependencies

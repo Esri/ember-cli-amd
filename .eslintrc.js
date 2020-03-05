@@ -19,7 +19,8 @@ module.exports = {
     browser: true
   },
   rules: {
-    'ember/no-jquery': 'error'
+    'ember/no-jquery': 'error',
+    'no-prototype-builtins': 'off'
   },
   overrides: [
     // node files

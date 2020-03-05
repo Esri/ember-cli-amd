@@ -1,6 +1,8 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
+## [3.0.0]
+- Breaking change, see readme for details
 
 ## [2.1.2]
 - Small fix: Fixed an issue under `ember serve`, index.html could get corrupted

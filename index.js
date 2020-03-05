@@ -12,13 +12,9 @@
 /* jshint node: true */
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-
 const ReplaceRequireAndDefineFilter = require('./lib/replace-require-and-define-filter');
 const convertIndexToAmd = require('./lib/convert-index-to-amd');
 const writeFile = require('broccoli-file-creator');
-const Funnel = require('broccoli-funnel');
 const mergeTrees = require('broccoli-merge-trees');
 
 module.exports = {
@@ -43,7 +39,8 @@ module.exports = {
     // Merge the default options
     app.options.amd = Object.assign({
       packages: [],
-      excludePaths: []
+      excludePaths: [],
+      amdLoadingFilePath: 'assets/amd-loading.js'
     }, app.options.amd);
 
     // Determine the type of loader.
@@ -54,12 +51,12 @@ module.exports = {
 
   contentFor(type) {
     if (type === 'body-footer') {
-      return '<script src="amd-loading.js" data-amd-loading=true></script>';
+      return `<script src="${this.app.options.amd.amdLoadingFilePath}" data-amd-loading=true></script>`;
     }
   },
 
   treeForPublic() {
-    const tree = writeFile('amd-loading.js', '');
+    const tree = writeFile(this.app.options.amd.amdLoadingFilePath, '');
     return mergeTrees([tree]);
   },
 
