@@ -78,6 +78,11 @@ class MapComponent extends Component {
 }
 ```
 
+## Dependencies
+* Ember.js v3.12 or above
+* Ember CLI v2.13 or above
+* Node.js v10 or above
+
 ## Resources
 * For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).
 * To learn more about the ArcGIS API for JavaScript, visit [the developers pages](https://developers.arcgis.com/javascript/).

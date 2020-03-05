@@ -7,12 +7,12 @@ module.exports = {
   launch_in_dev: [
     'Chrome'
   ],
+  browser_start_timeout: 120,
   browser_args: {
     Chrome: {
       ci: [
         process.env.CI ? '--no-sandbox' : null,
         '--headless',
-        '--disable-gpu',
         '--disable-dev-shm-usage',
         '--mute-audio',
         '--remote-debugging-port=0',
