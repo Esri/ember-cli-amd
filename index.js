@@ -12,16 +12,14 @@
 /* jshint node: true */
 'use strict';
 
-const ReplaceRequireAndDefineFilter = require('./lib/replace-require-and-define-filter');
-const convertIndexToAmd = require('./lib/convert-index-to-amd');
-const writeFile = require('broccoli-file-creator');
-const mergeTrees = require('broccoli-merge-trees');
+const ConvertToAMD = require('./lib/convert-to-amd-filter');
 
 module.exports = {
 
   name: 'ember-cli-amd',
 
   externalAmdModules: new Set(),
+  indexHtmlCache: {},
 
   included(app) {
     // Note: this function is only called once even if using ember build --watch or ember serve
@@ -49,40 +47,18 @@ module.exports = {
     }
   },
 
-  contentFor(type) {
-    if (type === 'body-footer') {
-      return `<script src="${this.app.options.amd.amdLoadingFilePath}" data-amd-loading=true></script>`;
-    }
-  },
-
-  treeForPublic() {
-    const tree = writeFile(this.app.options.amd.amdLoadingFilePath, '');
-    return mergeTrees([tree]);
-  },
-
   postprocessTree(type, tree) {
-    // Note: this function will be called once during the continuous builds. However, the tree returned will be directly manipulated.
-    // It means that the de-requireing will be going on.
-    if (type !== 'all' || !this.app.options.amd) {
+    if (!this.app.options.amd) {
       return tree;
     }
 
-    // Use the RequireFilter class to replace in the code that conflict with AMD loader
-    this.externalAmdModules.clear();
-    return new ReplaceRequireAndDefineFilter(tree, {
-      amdPackages: this.app.options.amd.packages,
-      externalAmdModules: this.externalAmdModules,
-      excludePaths: this.app.options.amd.excludePaths
-    });
-  },
+    if (type !== 'all') {
+      return tree;
+    }
 
-  postBuild(result) {
-
-    // When ember build --watch or ember serve are used, this function will be called over and over
-    // as a user updates code.
-
-    // We can only rebbuild the index after ALL the cli addons have ran. 
-    // We cannot bbuild it during the postPrecessTree!
-    convertIndexToAmd(this.app, result.directory, this.externalAmdModules);
+    // Note: this function will be called once during the continuous build. 
+    // However, the tree returned will be directly manipulated by the continuous build.
+    
+    return new ConvertToAMD(tree, this.app.options.amd);
   }
 };
