@@ -59,6 +59,6 @@ module.exports = {
     // Note: this function will be called once during the continuous build. 
     // However, the tree returned will be directly manipulated by the continuous build.
     
-    return new ConvertToAMD(tree, this.app.options.amd);
+    return new ConvertToAMD(this.app, tree);
   }
 };
