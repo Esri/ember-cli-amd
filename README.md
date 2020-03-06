@@ -41,9 +41,9 @@ var app = new EmberApp({
     // - when copying from public to build directory files that are pure JS or pure AMD
     excludePaths: ['assets/jsapi', 'assets/myLibThatDontUseEmberDefineOrRequire'],
 
-    // Optional: the path to javascript file that should be created for loading the AMD modules
+    // Optional: the path to javascript file that will be created for loading the AMD modules
     // default: assets/amd-loading.js
-    amdLoadingFilePath: 'assets/amd-loading.js'
+    loadingFilePath: 'assets/amd-loading.js'
   }
 });
 ```
