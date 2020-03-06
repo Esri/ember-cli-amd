@@ -38,7 +38,7 @@ module.exports = {
     app.options.amd = Object.assign({
       packages: [],
       excludePaths: [],
-      loadingFilePath: 'assets/amd-loading.js'
+      loadingFilePath: 'assets'
     }, app.options.amd);
 
     // Determine the type of loader.
