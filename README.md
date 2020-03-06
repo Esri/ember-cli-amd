@@ -42,8 +42,8 @@ var app = new EmberApp({
     excludePaths: ['assets/jsapi', 'assets/myLibThatDontUseEmberDefineOrRequire'],
 
     // Optional: the path to javascript file that will be created for loading the AMD modules
-    // default: assets/amd-loading.js
-    loadingFilePath: 'assets/amd-loading.js'
+    // default: assets
+    loadingFilePath: 'assets'
   }
 });
 ```
