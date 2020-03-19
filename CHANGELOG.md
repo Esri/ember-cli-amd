@@ -2,17 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [3.0.4]
-- Fix for test builds
-
-## [3.0.3]
-- Fix in loading script path when built on windows
-
-## [3.0.2]
-- Improvements to the new process
-
-## [3.0.0]
+## [3.0.5]
 - Breaking change, see readme for details
+- Improvements to the new process
+- Fix in loading script path when built on windows
+- Fix for test builds
 
 ## [2.1.2]
 - Small fix: Fixed an issue under `ember serve`, index.html could get corrupted
