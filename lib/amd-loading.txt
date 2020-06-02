@@ -9,8 +9,10 @@ require([
     }
     require([scripts[i]], function() {
       if (isVendor.test(scripts[i])) {
-        adoptables.forEach(function(adoptable){
-          enifed(adoptable.name, [], function(){return adoptable.obj;});
+        adoptables.forEach(function(adoptable) {
+          enifed(adoptable.name, [], function() {
+            return typeof adoptable.obj === 'function' && adoptable.obj.default === undefined ? { default: adoptable.obj } : adoptable.obj;
+          });
         });
       }
       recursiveRequire(++i, scripts);
