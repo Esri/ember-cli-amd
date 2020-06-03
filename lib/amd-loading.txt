@@ -15,10 +15,7 @@ require([
             if (typeof adoptable.obj === 'function' || typeof adoptable.obj === 'object') {
               return new Proxy(adoptable.obj, {
                 get(obj, prop) {
-                  if (prop === 'default' && !obj.hasOwnProperty('default')){
-                    return obj;
-                  } 
-                  return obj[prop];
+                  return prop === 'default' && !(prop in obj) ? obj : obj[prop];
                 }
               });
             }
