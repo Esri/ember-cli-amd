@@ -3,6 +3,7 @@ require([
 ], function (<%= objects %>) {
   var adoptables = [<%= adoptables %>];
   var isVendor = new RegExp('vendor(.*js)');
+
   function recursiveRequire(i, scripts){
     if (i >= scripts.length) {
       return;
@@ -11,7 +12,18 @@ require([
       if (isVendor.test(scripts[i])) {
         adoptables.forEach(function(adoptable) {
           enifed(adoptable.name, [], function() {
-            return typeof adoptable.obj === 'function' && adoptable.obj.default === undefined ? { default: adoptable.obj } : adoptable.obj;
+            if (typeof adoptable.obj === 'function' || typeof adoptable.obj === 'object') {
+              return new Proxy(adoptable.obj, {
+                get(obj, prop) {
+                  if (prop === 'default' && !obj.hasOwnProperty('default')){
+                    return obj;
+                  } 
+                  return obj[prop];
+                }
+              });
+            }
+            
+            return adoptable.obj;
           });
         });
       }
