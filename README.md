@@ -28,7 +28,7 @@ var app = new EmberApp({
     // Specify the loader path. Can be a CDN path or a relative path in the dist folder
     // - CDN: loader: 'https://js.arcgis.com/4.14/'
     // - Local: loader: 'assets/jsapi/init.js'
-    loader: 'https://js.arcgis.com/4.14/',
+    loader: 'https://js.arcgis.com/4.16/',
     
     // AMD packages from which modules are imported from in your application.
     // Used to parse the import statements and discover the AMD modules from the other modules.
@@ -57,7 +57,7 @@ module.exports = function(defaults) {
 
   var app = new EmberApp(defaults, {
     amd :{
-      loader: 'https://js.arcgis.com/4.14/',
+      loader: 'https://js.arcgis.com/4.16/',
       packages: ['esri','dojo'],
       excludePaths: ['assets/workers']
     }
@@ -182,6 +182,7 @@ The version 3.x introduce the following breaking changes:
 ## Resources
 * For more information on using ember-cli, visit [http://www.ember-cli.com/](http://www.ember-cli.com/).
 * To learn more about the ArcGIS API for JavaScript, visit [the developers pages](https://developers.arcgis.com/javascript/).
+* To understand AST https://astexplorer.net/
 
 ## Issues
 
