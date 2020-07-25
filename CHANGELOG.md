@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.1.0]
+- Replaced espree and esprima-walk by babel parser, traverse, and generator. Better semantic for what we want to achieve
+- 
+
 ## [3.0.7]
 - Bumped up jQuery dependency
 - AMD modules are not ES Modules! Up to today we were letting Ember do the dirty job of injecting in the AMD Module prototype the property 'default'. This is creating issues with some AMD modules. We are now taking this into our hands and creating a proxy ES module around the AMD Module.
