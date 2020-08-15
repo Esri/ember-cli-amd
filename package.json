@@ -1,6 +1,6 @@
 {
   "name": "ember-cli-amd",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "description": "Ember CLI Addon that can load AMD modules.",
   "scripts": {
     "build": "ember build --environment=production",

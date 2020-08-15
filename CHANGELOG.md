@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.1.2]
+- Fix issue when running under tests
+
 ## [3.1.1]
 - Fix issue with in-repo engines/addon not being parsed for AMD packages
 
