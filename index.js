@@ -22,6 +22,8 @@ module.exports = {
   indexHtmlCache: {},
 
   included(app) {
+    this._super.included.apply(this, arguments);
+    
     // Note: this function is only called once even if using ember build --watch or ember serve
 
     // This is the entry point for this addon. We will collect the amd definitions from the ember-cli-build.js and
@@ -29,26 +31,21 @@ module.exports = {
     // in the js files and modify the index.html to load AMD loader first and all the external AMD modules before
     // loading the vendor and app files.
 
-    // This addon relies on an 'amd' options in the ember-cli-build.js file
-    if (!app.options.amd) {
-      return new Error('ember-cli-amd: No amd options specified in the ember-cli-build.js file.');
+    // This addon relies on an 'amd' options in the ember-cli-build.js file and having a loader defined
+    if (!app.options.amd || !app.options.amd.loader) {
+      return;
     }
 
     // Merge the default options
-    app.options.amd = Object.assign({
+    this.amdOptions = Object.assign({
       packages: [],
       excludePaths: [],
       loadingFilePath: 'assets'
     }, app.options.amd);
-
-    // Determine the type of loader.
-    if (!app.options.amd.loader) {
-      throw new Error('ember-cli-amd: You must specify a loader option the amd options in ember-cli-build.js.');
-    }
   },
 
   postprocessTree(type, tree) {
-    if (!this.app.options.amd) {
+    if (!this.amdOptions) {
       return tree;
     }
 
@@ -58,7 +55,10 @@ module.exports = {
 
     // Note: this function will be called once during the continuous build. 
     // However, the tree returned will be directly manipulated by the continuous build.
-    
-    return new ConvertToAMD(this.app, tree);
+    let options = {
+      amdOptions: this.amdOptions,
+      rootURL: this.app.project.config(this.app.env).rootURL
+    }
+    return new ConvertToAMD(tree, options);
   }
 };
