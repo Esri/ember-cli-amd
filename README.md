@@ -43,7 +43,14 @@ var app = new EmberApp({
 
     // Optional: the path to javascript file that will be created for loading the AMD modules
     // default: assets
-    loadingFilePath: 'assets'
+    loadingFilePath: 'assets',
+
+    // Optional: Indicates if we should inject scripts directly into index.html, or if we should
+    // write them to separate js files that are loaded by index.html.  When strict fingerprinting
+    // is required, this should be set to true, since there are scenarios where the generated 
+    // amd-loading.js script will not get a unique fingerprint.
+    // default: false
+    inline: false,
   }
 });
 ```
