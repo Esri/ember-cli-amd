@@ -1,3 +1,0 @@
-window.dojoConfig = {
-    async: true
-};
