@@ -1,6 +1,6 @@
 import Component from '@ember/component';
 
-import Map from 'esri/Map';
+import Map from 'esri/map';
 
 const EsriMapComponent = Component.extend({
     didInsertElement() {
