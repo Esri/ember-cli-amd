@@ -2,8 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.2.2]
+- Fixed issue [#59](https://github.com/Esri/ember-cli-amd/issues/59) related to rootURL in tests
+
 ## [3.2.1]
 - Fixed issue [#58](https://github.com/Esri/ember-cli-amd/issues/58) related to rootURL
+
 ## [3.2.0]
 - Added `inline` option, which will inject the `amd-loading` script directly into index.html when set to true.
 
