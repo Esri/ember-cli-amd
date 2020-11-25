@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.2.3]
+- Fixed issue with ember serve when script tags were duplicated after rebuilds
+
 ## [3.2.2]
 - Fixed issue [#59](https://github.com/Esri/ember-cli-amd/issues/59) related to rootURL in tests
 
